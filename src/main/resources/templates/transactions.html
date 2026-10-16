@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Transaktionen – Credit Card Portal</title>
+    <link rel="stylesheet" th:href="@{/css/portal.css}">
+</head>
+<body>
+<header>
+    <h1>Credit Card Portal</h1>
+    <form th:action="@{/logout}" method="post">
+        <button type="submit" data-testid="logout-button">Abmelden</button>
+    </form>
+</header>
+
+<main>
+    <section class="card summary" data-testid="account-summary">
+        <div>
+            <div class="label">Karteninhaber</div>
+            <div class="value" data-testid="customer-name" th:text="${customer.fullName}">Anna Muster</div>
+        </div>
+        <div>
+            <div class="label">Karte</div>
+            <div class="value" data-testid="card-number" th:text="${customer.maskedCardNumber}">**** **** **** 4242</div>
+        </div>
+        <div>
+            <div class="label">Saldo</div>
+            <div class="value" data-testid="balance-total"
+                 th:classappend="${balance.signum() < 0} ? 'debit' : 'credit'"
+                 th:text="|${@money.format(balance)} CHF|">-0.00 CHF</div>
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Transaktionen</h2>
+        <p data-testid="transactions-empty" th:if="${#lists.isEmpty(transactions)}">
+            Keine Transaktionen vorhanden.
+        </p>
+        <div class="table-wrap" th:unless="${#lists.isEmpty(transactions)}">
+            <table data-testid="transactions-table">
+                <thead>
+                <tr>
+                    <th>Datum</th>
+                    <th>Händler</th>
+                    <th>Kategorie</th>
+                    <th class="amount">Betrag</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="tx : ${transactions}" data-testid="transaction-row"
+                    th:attr="data-transaction-id=${tx.id},data-transaction-type=${tx.type}">
+                    <td data-testid="tx-date" th:text="${#temporals.format(tx.date, 'dd.MM.yyyy')}">01.10.2026</td>
+                    <td data-testid="tx-merchant" th:text="${tx.merchant}">Händler</td>
+                    <td data-testid="tx-category" th:text="${tx.category}">Kategorie</td>
+                    <td data-testid="tx-amount" class="amount"
+                        th:classappend="${tx.type.name() == 'DEBIT'} ? 'debit' : 'credit'"
+                        th:text="|${@money.format(tx.signedAmount())} ${tx.currency}|">0.00 CHF</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,83 @@
+:root {
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --text: #1d2330;
+    --muted: #5f6b7a;
+    --brand: #0b3d91;
+    --debit: #b42318;
+    --credit: #067647;
+    --border: #e3e6ea;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+}
+
+header {
+    background: var(--brand);
+    color: #fff;
+    padding: 16px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h1 { margin: 0; font-size: 1.2rem; }
+
+main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
+
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 20px;
+}
+
+.login { max-width: 380px; margin: 80px auto; }
+
+label { display: block; font-size: .9rem; margin: 12px 0 4px; color: var(--muted); }
+
+input[type=text], input[type=password] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 1rem;
+}
+
+button {
+    margin-top: 16px;
+    padding: 10px 16px;
+    border: 0;
+    border-radius: 6px;
+    background: var(--brand);
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+header button { margin: 0; background: rgba(255,255,255,.15); }
+
+.alert { padding: 10px; border-radius: 6px; margin-bottom: 12px; font-size: .9rem; }
+.alert.error { background: #fee4e2; color: var(--debit); }
+.alert.info { background: #e0f2fe; color: #075985; }
+
+.summary { display: flex; gap: 32px; flex-wrap: wrap; }
+.summary .label { color: var(--muted); font-size: .85rem; }
+.summary .value { font-size: 1.25rem; font-weight: 600; }
+
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+th { color: var(--muted); font-weight: 500; font-size: .85rem; }
+td.amount, th.amount { text-align: right; font-variant-numeric: tabular-nums; }
+.debit { color: var(--debit); }
+.credit { color: var(--credit); }
+
+.hint { color: var(--muted); font-size: .8rem; }

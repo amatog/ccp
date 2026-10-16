@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Anmelden – Credit Card Portal</title>
+    <link rel="stylesheet" th:href="@{/css/portal.css}">
+</head>
+<body>
+<main>
+    <div class="card login">
+        <h2>Credit Card Portal</h2>
+
+        <div class="alert error" data-testid="login-error" th:if="${param.error}">
+            Benutzername oder Passwort ist falsch.
+        </div>
+        <div class="alert info" data-testid="logout-message" th:if="${param.logout}">
+            Sie wurden abgemeldet.
+        </div>
+
+        <form th:action="@{/login}" method="post">
+            <label for="username">Benutzername</label>
+            <input type="text" id="username" name="username" autocomplete="username"
+                   data-testid="login-username" required autofocus>
+
+            <label for="password">Passwort</label>
+            <input type="password" id="password" name="password" autocomplete="current-password"
+                   data-testid="login-password" required>
+
+            <button type="submit" data-testid="login-submit">Anmelden</button>
+        </form>
+
+        <p class="hint">Demo-Portal mit fiktiven Daten.</p>
+    </div>
+</main>
+</body>
+</html>
