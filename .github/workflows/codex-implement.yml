@@ -152,6 +152,13 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         run: node scripts/jira-codex.mjs done
 
+      # Prozessschritt 4: Gemini-Review für den neuen PR starten (gemini-review.yml).
+      - name: Gemini-Review starten
+        env:
+          PR_URL: ${{ steps.pr.outputs.url }}
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run gemini-review.yml --repo "$REPO" --ref main -f pr_number="${PR_URL##*/}" -f issue_key="$ISSUE_KEY"
+
       - name: Fehlschlag in JIRA melden
         if: failure() && steps.task.outputs.reported != 'true'
         env:

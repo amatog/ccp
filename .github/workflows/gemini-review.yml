@@ -1,0 +1,146 @@
+# Prozessschritt 4: Gemini prüft einen Pull Request gegen die Spezifikation im JIRA-Ticket.
+#
+# Auslöser: automatisch am Ende von codex-implement.yml, oder manuell über «Run workflow».
+# Gemini hat nur Lesezugriff auf das ausgecheckte Repository und keinen GitHub-Token.
+# Den Review-Kommentar veröffentlicht der Workflow selbst.
+# Einrichtung: docs/GEMINI-SETUP.md
+name: Gemini – Pull Request reviewen
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Nummer des Pull Requests, z. B. 2'
+        required: true
+      issue_key:
+        description: 'JIRA-Ticket, z. B. CCP-6 (leer = aus dem PR-Titel)'
+        required: false
+
+concurrency:
+  group: gemini-review-${{ inputs.pr_number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read         # Code lesen
+  pull-requests: write   # Review-Kommentar
+  issues: write          # PR-Kommentare laufen über die Issues-API
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Secrets werden nur in den Schritten gesetzt, die sie brauchen – nie im Gemini-Schritt ausser dem API-Schlüssel.
+    env:
+      PR_NUMBER: ${{ inputs.pr_number }}
+      ISSUE_KEY_INPUT: ${{ inputs.issue_key }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      REPO: ${{ github.repository }}
+    steps:
+      - name: Pull Request ermitteln
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "Ungültige PR-Nummer «$PR_NUMBER»"; exit 1
+          fi
+          gh api "repos/$REPO/pulls/$PR_NUMBER" > "$RUNNER_TEMP/pr.json"
+          state="$(jq -r .state "$RUNNER_TEMP/pr.json")"
+          if [ "$state" != "open" ]; then echo "PR #$PR_NUMBER ist nicht offen ($state)."; exit 1; fi
+          title="$(jq -r .title "$RUNNER_TEMP/pr.json")"
+          key="${ISSUE_KEY_INPUT:-$(grep -oE 'CCP-[0-9]+' <<<"$title" | head -1 || true)}"
+          if ! [[ "$key" =~ ^CCP-[0-9]+$ ]]; then
+            echo "Kein JIRA-Ticket im PR-Titel «$title» gefunden."; exit 1
+          fi
+          {
+            echo "sha=$(jq -r .head.sha "$RUNNER_TEMP/pr.json")"
+            echo "url=$(jq -r .html_url "$RUNNER_TEMP/pr.json")"
+            echo "issue_key=$key"
+          } >> "$GITHUB_OUTPUT"
+          echo "PR #$PR_NUMBER «$title» → $key"
+
+      # Stand des Pull Requests, ohne Git-Zugangsdaten.
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.pr.outputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Unterlagen für Gemini bereitlegen
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_KEY: ${{ steps.pr.outputs.issue_key }}
+          SPEC_OUT: .gemini-review/spec.md
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          mkdir -p .gemini-review
+          echo ".gemini-review/" >> .git/info/exclude
+          node scripts/jira-codex.mjs spec
+          jq -r '"# PR #\(.number): \(.title)\n\n\(.body // "(keine Beschreibung)")"' "$RUNNER_TEMP/pr.json" > .gemini-review/pr.md
+          gh api -H "Accept: application/vnd.github.diff" "repos/$REPO/pulls/$PR_NUMBER" > .gemini-review/diff.patch
+          wc -c .gemini-review/*
+
+      - name: Gemini ausführen
+        id: gemini
+        uses: google-github-actions/run-gemini-cli@v0
+        env:
+          GEMINI_CLI_TRUST_WORKSPACE: 'true'
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_model: ${{ vars.GEMINI_MODEL }}
+          workflow_name: gemini-review
+          github_pr_number: ${{ inputs.pr_number }}
+          prompt: >-
+            Lies .github/gemini/prompts/review.md und führe den darin beschriebenen
+            Review-Auftrag vollständig aus. Antworte ausschliesslich mit dem Review-Kommentar.
+          # Nur lesende Werkzeuge: keine Shell, kein Schreiben, keine Netzwerk- oder GitHub-Werkzeuge.
+          settings: |-
+            {
+              "model": { "maxSessionTurns": 40 },
+              "tools": { "core": ["list_directory", "read_file", "grep_search"] }
+            }
+
+      - name: Review-Kommentar am PR veröffentlichen
+        id: post
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REVIEW: ${{ steps.gemini.outputs.summary }}
+          JIRA_URL: ${{ vars.JIRA_BASE_URL || 'https://giuseppeamato.atlassian.net' }}
+          ISSUE_KEY: ${{ steps.pr.outputs.issue_key }}
+        run: |
+          if [ -z "${REVIEW//[[:space:]]/}" ]; then echo "Gemini hat keine Antwort geliefert."; exit 1; fi
+          body="$RUNNER_TEMP/review.md"
+          printf '%s\n' "$REVIEW" > "$body"
+          printf '\n---\nJIRA: %s/browse/%s · Gemini-Lauf: %s\n\n🤖 Automatisch erstellt von Gemini über GitHub Actions\n' \
+            "${JIRA_URL%/}" "$ISSUE_KEY" "$RUN_URL" >> "$body"
+          url="$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" -F body=@"$body" --jq .html_url)"
+          rec="$(grep -oE '\*\*Empfehlung:\*\*[[:space:]]*(Freigeben nach Korrekturen|Nicht freigeben|Freigeben)' "$body" | head -1 | sed -E 's/\*\*Empfehlung:\*\*[[:space:]]*//' || true)"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "recommendation=${rec:-unbekannt}" >> "$GITHUB_OUTPUT"
+          echo "Review: $url (Empfehlung: ${rec:-unbekannt})"
+
+      - name: Ergebnis in JIRA melden
+        env:
+          ISSUE_KEY: ${{ steps.pr.outputs.issue_key }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+          REVIEW_URL: ${{ steps.post.outputs.url }}
+          RECOMMENDATION: ${{ steps.post.outputs.recommendation }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: node scripts/jira-codex.mjs review
+
+      - name: Fehlschlag in JIRA melden
+        if: failure() && steps.pr.outputs.issue_key != ''
+        env:
+          ISSUE_KEY: ${{ steps.pr.outputs.issue_key }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: node scripts/jira-codex.mjs review-failed

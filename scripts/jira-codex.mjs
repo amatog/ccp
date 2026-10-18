@@ -1,15 +1,20 @@
 #!/usr/bin/env node
-// JIRA-Anbindung für den Codex-Workflow (.github/workflows/codex-implement.yml).
+// JIRA-Anbindung für die KI-Workflows (codex-implement.yml und gemini-review.yml).
 //
 //   node scripts/jira-codex.mjs start   – Spezifikation laden, Auftrag für Codex bauen,
 //                                         Ticket auf «In Arbeit» setzen und Start kommentieren
 //   node scripts/jira-codex.mjs done    – PR-Link ins Ticket schreiben, Auslöse-Label entfernen
 //   node scripts/jira-codex.mjs failed  – Fehlschlag ins Ticket schreiben, Auslöse-Label entfernen
+//   node scripts/jira-codex.mjs spec          – Titel und neueste Spezifikation in SPEC_OUT schreiben (Gemini-Review)
+//   node scripts/jira-codex.mjs review        – Gemini-Empfehlung und PR-Kommentar-Link ins Ticket schreiben
+//   node scripts/jira-codex.mjs review-failed – Fehlschlag des Gemini-Reviews ins Ticket schreiben
 //
 // Umgebung: JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN, ISSUE_KEY, RUN_URL
 //   start:  PROMPT_TEMPLATE, PROMPT_OUT, GITHUB_OUTPUT (Branch-Name und Titel als Step-Outputs)
 //   done:   PR_URL, BRANCH, CHANGED_FILES (eine Datei pro Zeile)
 //   failed: FAILURE_REASON (optional)
+//   spec:   SPEC_OUT
+//   review: PR_URL, REVIEW_URL, RECOMMENDATION
 // Mit DRY_RUN=1 und SPEC_FIXTURE=<json-Datei> läuft das Skript ohne JIRA (für lokale Tests).
 
 import { readFileSync, writeFileSync, appendFileSync } from 'node:fs';
@@ -34,7 +39,10 @@ switch (command) {
   case 'start': await start(); break;
   case 'done': await done(); break;
   case 'failed': await failed(); break;
-  default: fail(`Unbekannter Befehl «${command}» (start | done | failed).`);
+  case 'spec': await specForReview(); break;
+  case 'review': await review(); break;
+  case 'review-failed': await reviewFailed(); break;
+  default: fail(`Unbekannter Befehl «${command}» (start | done | failed | spec | review | review-failed).`);
 }
 
 // --- Befehle --------------------------------------------------------------------
@@ -96,6 +104,42 @@ async function failed() {
   const reason = env.FAILURE_REASON || 'Der Workflow ist fehlgeschlagen.';
   await comment(`(x) *Codex-Lauf fehlgeschlagen*\n* Grund: ${reason}\n* Details: [GitHub Actions|${env.RUN_URL || '-'}]\n\nFür einen neuen Versuch das Label {{${TRIGGER_LABEL}}} erneut setzen.`);
   await removeTriggerLabel();
+}
+
+/** Schreibt Titel, Beschreibung und neueste Spezifikation als Markdown-Datei für das Review. */
+async function specForReview() {
+  const fixture = DRY_RUN ? JSON.parse(readFileSync(env.SPEC_FIXTURE, 'utf8')) : null;
+  const issue = fixture ?? await jira('GET', `/rest/api/2/issue/${ISSUE_KEY}?fields=summary,description`);
+  const spec = fixture
+    ? [...(fixture.fields.comment?.comments ?? [])].reverse().find(isSpec)
+    : await findNewestSpec();
+  const text =
+    `# ${ISSUE_KEY}: ${issue.fields.summary.trim()}\n\n` +
+    `## Beschreibung\n\n${(issue.fields.description || '(keine Beschreibung)').trim()}\n\n` +
+    `## Spezifikation (massgebend)\n\n${spec ? spec.body.trim() : '(Im Ticket ist keine Spezifikation vorhanden.)'}\n`;
+  writeFileSync(env.SPEC_OUT, text);
+  console.log(`Spezifikation für ${ISSUE_KEY} geschrieben: ${env.SPEC_OUT}${spec ? '' : ' (keine gefunden)'}`);
+}
+
+async function review() {
+  const rec = (env.RECOMMENDATION || '').trim() || 'unbekannt';
+  const icon = /^Freigeben$/i.test(rec) ? '(/)' : /^Nicht freigeben/i.test(rec) ? '(x)' : '(!)';
+  await comment(
+    `${icon} *Gemini-Review abgeschlossen* (Prozessschritt 4)\n` +
+    `* Empfehlung: *${rec}*\n` +
+    `* Review-Kommentar: [am Pull Request|${env.REVIEW_URL || env.PR_URL}]\n` +
+    `* Lauf: [GitHub Actions|${env.RUN_URL || '-'}]\n\n` +
+    `Nächster Schritt: Freigabe und Merge durch einen Menschen.`,
+  );
+}
+
+async function reviewFailed() {
+  await comment(
+    `(x) *Gemini-Review fehlgeschlagen*\n` +
+    `* Pull Request: [${env.PR_URL || '-'}|${env.PR_URL || '-'}]\n` +
+    `* Details: [GitHub Actions|${env.RUN_URL || '-'}]\n\n` +
+    `Neuer Versuch: in GitHub unter Actions → «Gemini – Pull Request reviewen» → Run workflow.`,
+  );
 }
 
 // --- JIRA-Hilfen ------------------------------------------------------------------

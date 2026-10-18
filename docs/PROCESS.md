@@ -7,7 +7,7 @@ JIRA-Ticket (CCP-n)
   → 1. Claude   Spezifikation + Akzeptanzkriterien + data-testid-Liste   → Kommentar im Ticket, Label «codex-bereit»
   → 2. Codex    automatisch gestartet: Implementierung auf feature/CCP-n-… → Pull Request + Kommentar im Ticket
   → 3. CI       mvn verify + Playwright gegen lokale App                  → Status am PR
-  → 4. Gemini   Code-Review des Pull Requests                             → Review-Kommentar am PR
+  → 4. Gemini   automatisch gestartet: Code-Review gegen die Spezifikation → Review-Kommentar am PR + Empfehlung im Ticket
   → 5. Mensch   Freigabe und Merge nach main
   → 6. Deploy   GitHub Actions: Build → VPS (Port 8081) → Health-Check
   → 7. Claude   Playwright-Tests anpassen/ergänzen (gleicher PR wie Schritt 2 oder Folge-PR)
@@ -37,6 +37,7 @@ JIRA-Ticket (CCP-n)
 |---|---|---|
 | `.github/workflows/ci.yml` | Pull Request, manuell, vom Codex-Workflow | Build, Unit-Tests, App lokal starten, Playwright |
 | `.github/workflows/codex-implement.yml` | JIRA-Label `codex-bereit` (über JIRA-Automation), manuell | Spezifikation laden → Codex implementiert → Pull Request → Meldung ins Ticket. Einrichtung: [`CODEX-SETUP.md`](CODEX-SETUP.md) |
+| `.github/workflows/gemini-review.yml` | Ende von `codex-implement.yml`, manuell (PR-Nummer) | Spezifikation laden → Gemini prüft nach `GEMINI.md` → Review-Kommentar am PR → Empfehlung ins Ticket. Einrichtung: [`GEMINI-SETUP.md`](GEMINI-SETUP.md) |
 | `.github/workflows/deploy.yml` | Push auf `main`, manuell | Build → Deploy auf VPS → Health-Check → Playwright gegen VPS → JIRA-Report |
 
 ## Benötigte GitHub-Secrets
@@ -45,7 +46,8 @@ JIRA-Ticket (CCP-n)
 |---|---|---|
 | `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` | Deployment per SSH | eingerichtet |
 | `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN` | Testreport und Codex-Meldungen ins Ticket | eingerichtet (erfolgreich getestet mit CCP-5 am 16.10.2026) |
-| `OPENAI_API_KEY` | Codex-Workflow | offen (siehe [`CODEX-SETUP.md`](CODEX-SETUP.md)) |
+| `OPENAI_API_KEY` | Codex-Workflow | eingerichtet (erster Lauf mit CCP-6 am 18.10.2026) |
+| `GEMINI_API_KEY` | Gemini-Review | offen (siehe [`GEMINI-SETUP.md`](GEMINI-SETUP.md)) |
 
 ## Zielumgebung
 
