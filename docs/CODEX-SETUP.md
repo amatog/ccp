@@ -13,6 +13,7 @@ Claude: Spezifikation als Kommentar ins Ticket, dann Label «codex-bereit» setz
        5. Prüfung: Änderungen vorhanden? Nichts in geschützten Pfaden? mvn -B verify grün?
        6. Commit, Push, Pull Request «CCP-n …» (Beschreibung = Schlussmeldung von Codex)
        7. CI für den PR starten, PR-Link ins Ticket, Label wieder entfernen
+       8. Playwright-Tests durch Claude starten (claude-tests.yml, danach Gemini-Review)
   → bei Fehler: Kommentar «Codex-Lauf fehlgeschlagen» mit Grund und Link
 ```
 

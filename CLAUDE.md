@@ -23,6 +23,8 @@ Danach das Label **`codex-bereit`** setzen. Damit startet Codex automatisch (`.g
 
 ## 2. Playwright-Tests
 
+Nach jedem Codex-PR schreibt Claude die Tests automatisch (`.github/workflows/claude-tests.yml`, Einrichtung in `docs/CLAUDE-TESTS-SETUP.md`). Die Regeln unten gelten für den automatischen Lauf genauso wie für Tests von Hand.
+
 - Tests liegen in `e2e/tests/`, eine Datei pro Feature (`<feature>.spec.ts`).
 - Gemeinsame Abläufe kommen aus `e2e/tests/helpers.ts` (`login`, `loginAndOpenTransactions`).
 - Selektoren **nur** über `getByTestId(...)` oder `data-transaction-id`. Keine CSS-Klassen, keine XPath, keine Texte als Selektor.
@@ -50,6 +52,10 @@ Passwort für alle: `demo1234` (überschreibbar mit `CCP_DEMO_PASSWORD`).
 ## Bestehende data-testid
 
 `login-username`, `login-password`, `login-submit`, `login-error`, `logout-message`, `logout-button`, `account-summary`, `customer-name`, `card-number`, `balance-total`, `transactions-table`, `transactions-empty`, `transaction-row`, `tx-date`, `tx-merchant`, `tx-category`, `tx-amount`
+
+Zeitraumfilter (CCP-6): `filter-form`, `filter-from`, `filter-to`, `filter-submit`, `filter-reset`, `filter-summary`, `filter-no-results`, `filter-error`
+
+Anzahl Buchungen (CCP-9): `transaction-counts`, `count-debits`, `count-credits`
 
 Zeilen tragen zusätzlich `data-transaction-id` und `data-transaction-type` (`DEBIT` / `CREDIT`).
 

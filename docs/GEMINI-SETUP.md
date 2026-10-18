@@ -3,7 +3,7 @@
 Ziel: Sobald Codex einen Pull Request eröffnet hat, prüft Gemini ihn selbständig gegen die Spezifikation im JIRA-Ticket. Das Review erscheint als Kommentar am Pull Request, die Empfehlung im Ticket.
 
 ```
-codex-implement.yml eröffnet PR
+codex-implement.yml eröffnet PR → claude-tests.yml schreibt Playwright-Tests
   → startet gemini-review.yml (PR-Nummer, Ticket)
        1. PR ermitteln, Ticket aus Eingabe oder PR-Titel
        2. main (Werkzeuge, Regeln) und den PR (nur Prüfgegenstand, Ordner pr/) auschecken
@@ -38,7 +38,7 @@ Ohne Angabe nimmt die Gemini CLI ihr Standardmodell. Ein bestimmtes Modell läss
 
 ## Review starten
 
-- **Automatisch:** am Ende jedes erfolgreichen Codex-Laufs.
+- **Automatisch:** am Ende jedes Laufs von `claude-tests.yml` (also nach Codex und den Playwright-Tests).
 - **Manuell** (z. B. nach neuen Commits oder für bestehende PRs): GitHub → *Actions → «Gemini – Pull Request reviewen» → Run workflow* → PR-Nummer eingeben, Ticket optional.
 
 ## Wo der Verlauf nachzulesen ist
