@@ -4,8 +4,8 @@ Jede Änderung am Credit Card Portal folgt demselben Ablauf. Die KI-Agents reden
 
 ```
 JIRA-Ticket (CCP-n)
-  → 1. Claude   Spezifikation + Akzeptanzkriterien + data-testid-Liste   → Kommentar im Ticket
-  → 2. Codex    Implementierung auf Branch feature/CCP-n-…               → Pull Request
+  → 1. Claude   Spezifikation + Akzeptanzkriterien + data-testid-Liste   → Kommentar im Ticket, Label «codex-bereit»
+  → 2. Codex    automatisch gestartet: Implementierung auf feature/CCP-n-… → Pull Request + Kommentar im Ticket
   → 3. CI       mvn verify + Playwright gegen lokale App                  → Status am PR
   → 4. Gemini   Code-Review des Pull Requests                             → Review-Kommentar am PR
   → 5. Mensch   Freigabe und Merge nach main
@@ -35,7 +35,8 @@ JIRA-Ticket (CCP-n)
 
 | Workflow | Auslöser | Was passiert |
 |---|---|---|
-| `.github/workflows/ci.yml` | Pull Request | Build, Unit-Tests, App lokal starten, Playwright |
+| `.github/workflows/ci.yml` | Pull Request, manuell, vom Codex-Workflow | Build, Unit-Tests, App lokal starten, Playwright |
+| `.github/workflows/codex-implement.yml` | JIRA-Label `codex-bereit` (über JIRA-Automation), manuell | Spezifikation laden → Codex implementiert → Pull Request → Meldung ins Ticket. Einrichtung: [`CODEX-SETUP.md`](CODEX-SETUP.md) |
 | `.github/workflows/deploy.yml` | Push auf `main`, manuell | Build → Deploy auf VPS → Health-Check → Playwright gegen VPS → JIRA-Report |
 
 ## Benötigte GitHub-Secrets
@@ -43,7 +44,8 @@ JIRA-Ticket (CCP-n)
 | Secret | Zweck | Status |
 |---|---|---|
 | `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` | Deployment per SSH | eingerichtet |
-| `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN` | Testreport ins Ticket | eingerichtet (erfolgreich getestet mit CCP-5 am 16.10.2026) |
+| `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN` | Testreport und Codex-Meldungen ins Ticket | eingerichtet (erfolgreich getestet mit CCP-5 am 16.10.2026) |
+| `OPENAI_API_KEY` | Codex-Workflow | offen (siehe [`CODEX-SETUP.md`](CODEX-SETUP.md)) |
 
 ## Zielumgebung
 

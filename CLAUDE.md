@@ -17,6 +17,10 @@ Schreibe als Kommentar ins JIRA-Ticket:
 - **Testdaten:** welche Demo-Kunden und Transaktionen betroffen sind. Neue Daten nur fiktiv.
 - **Ausserhalb des Umfangs:** was ausdrücklich nicht dazugehört.
 
+Der Kommentar beginnt mit der Überschrift «Spezifikation». Daran erkennt der Codex-Workflow die massgebende Fassung. Gibt es mehrere, gilt die neueste.
+
+Danach das Label **`codex-bereit`** setzen. Damit startet Codex automatisch (`.github/workflows/codex-implement.yml`, Einrichtung in `docs/CODEX-SETUP.md`).
+
 ## 2. Playwright-Tests
 
 - Tests liegen in `e2e/tests/`, eine Datei pro Feature (`<feature>.spec.ts`).
