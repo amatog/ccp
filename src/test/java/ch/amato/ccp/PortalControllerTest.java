@@ -27,6 +27,40 @@ class PortalControllerTest {
     MockMvc mvc;
 
     @Test
+    @WithMockUser(username = "anna")
+    void annaSeesBookingCountsAfterBalanceInAccountSummary() throws Exception {
+        mvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='account-summary']//*[@data-testid='count-debits']")
+                        .string("5 Belastungen"))
+                .andExpect(xpath("//*[@data-testid='account-summary']//*[@data-testid='count-credits']")
+                        .string("1 Gutschrift"))
+                .andExpect(xpath("//*[@data-testid='balance-total']").string("-628.95 CHF"))
+                .andExpect(xpath("//*[@data-testid='balance-total']/../following-sibling::*[1]"
+                        + "[@data-testid='transaction-counts']/*[@class='label']").string("Buchungen"));
+    }
+
+    @Test
+    @WithMockUser(username = "marco")
+    void marcoSeesOnlyHisBookingCounts() throws Exception {
+        mvc.perform(get("/transactions").param("username", "anna"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='count-debits']").string("3 Belastungen"))
+                .andExpect(xpath("//*[@data-testid='count-credits']").string("1 Gutschrift"));
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
+    void dateFilterDoesNotChangeBookingCountsOrTotalBalance() throws Exception {
+        mvc.perform(get("/transactions").param("from", "2026-10-06").param("to", "2026-10-06"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(1))
+                .andExpect(xpath("//*[@data-testid='count-debits']").string("5 Belastungen"))
+                .andExpect(xpath("//*[@data-testid='count-credits']").string("1 Gutschrift"))
+                .andExpect(xpath("//*[@data-testid='balance-total']").string("-628.95 CHF"));
+    }
+
+    @Test
     void unauthenticatedUserIsRedirectedToLogin() throws Exception {
         mvc.perform(get("/transactions"))
                 .andExpect(status().is3xxRedirection())
