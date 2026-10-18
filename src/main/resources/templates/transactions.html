@@ -74,7 +74,12 @@
                     th:attr="data-transaction-id=${tx.id},data-transaction-type=${tx.type}">
                     <td data-testid="tx-date" th:text="${#temporals.format(tx.date, 'dd.MM.yyyy')}">01.10.2026</td>
                     <td data-testid="tx-merchant" th:text="${tx.merchant}">Händler</td>
-                    <td data-testid="tx-category" th:text="${tx.category}">Kategorie</td>
+                    <td data-testid="tx-category">
+                        <span data-testid="category-badge" class="badge"
+                              th:classappend="|badge--${tx.categoryKey()}|"
+                              th:attr="data-category=${tx.categoryKey()}"
+                              th:text="${tx.category}">Kategorie</span>
+                    </td>
                     <td data-testid="tx-amount" class="amount"
                         th:classappend="${tx.type.name() == 'DEBIT'} ? 'debit' : 'credit'"
                         th:text="|${@money.format(tx.signedAmount())} ${tx.currency}|">0.00 CHF</td>

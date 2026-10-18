@@ -81,3 +81,20 @@ td.amount, th.amount { text-align: right; font-variant-numeric: tabular-nums; }
 .credit { color: var(--credit); }
 
 .hint { color: var(--muted); font-size: .8rem; }
+
+.badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: .8rem;
+    white-space: nowrap;
+}
+
+.badge--lebensmittel { background-color: #DCFCE7; color: #166534; }
+.badge--reisen { background-color: #DBEAFE; color: #1E40AF; }
+.badge--shopping { background-color: #FCE7F3; color: #9D174D; }
+.badge--gastronomie { background-color: #FFEDD5; color: #9A3412; }
+.badge--elektronik { background-color: #EDE9FE; color: #5B21B6; }
+.badge--telekom { background-color: #CFFAFE; color: #155E75; }
+.badge--mobilitaet { background-color: #FEF9C3; color: #854D0E; }
+.badge--andere { background-color: #F3F4F6; color: #374151; }
