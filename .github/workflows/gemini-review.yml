@@ -1,8 +1,8 @@
 # Prozessschritt 4: Gemini prüft einen Pull Request gegen die Spezifikation im JIRA-Ticket.
 #
 # Auslöser: automatisch am Ende von codex-implement.yml, oder manuell über «Run workflow».
-# Gemini hat nur Lesezugriff auf das ausgecheckte Repository und keinen GitHub-Token.
-# Den Review-Kommentar veröffentlicht der Workflow selbst.
+# Gemini hat nur Lesezugriff und keinen GitHub-Token. Den Review-Kommentar veröffentlicht der Workflow.
+# Werkzeuge und Regeln (scripts/, GEMINI.md, Vorlage) kommen aus main; der PR-Code liegt nur in pr/.
 # Einrichtung: docs/GEMINI-SETUP.md
 name: Gemini – Pull Request reviewen
 
@@ -41,6 +41,10 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
+          # Werkzeuge und Review-Regeln stammen aus dem Workflow-Stand. Nur main gilt als vertrauenswürdig.
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "Das Review darf nur von main aus gestartet werden (gestartet von $GITHUB_REF)."; exit 1
+          fi
           if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then
             echo "Ungültige PR-Nummer «$PR_NUMBER»"; exit 1
           fi
@@ -59,11 +63,25 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "PR #$PR_NUMBER «$title» → $key"
 
-      # Stand des Pull Requests, ohne Git-Zugangsdaten.
+      # Vertrauenswürdiger Stand (main): JIRA-Skript, Review-Vorlage und GEMINI.md kommen von hier.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Stand des Pull Requests nur als Prüfgegenstand im Unterordner pr/. Daraus wird nichts ausgeführt.
       - uses: actions/checkout@v4
         with:
           ref: ${{ steps.pr.outputs.sha }}
+          path: pr
           persist-credentials: false
+
+      # Anweisungs- und Einstellungsdateien aus dem PR umbenennen, damit Gemini sie nur als
+      # Prüfgegenstand liest und nicht als eigene Anweisungen oder Konfiguration lädt.
+      - name: Anweisungsdateien des PR entschärfen
+        run: |
+          for f in pr/GEMINI.md pr/.gemini; do
+            if [ -e "$f" ]; then mv "$f" "$f.pr"; echo "umbenannt: $f → $f.pr"; fi
+          done
 
       - uses: actions/setup-node@v4
         with:
@@ -79,7 +97,6 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         run: |
           mkdir -p .gemini-review
-          echo ".gemini-review/" >> .git/info/exclude
           node scripts/jira-codex.mjs spec
           jq -r '"# PR #\(.number): \(.title)\n\n\(.body // "(keine Beschreibung)")"' "$RUNNER_TEMP/pr.json" > .gemini-review/pr.md
           gh api -H "Accept: application/vnd.github.diff" "repos/$REPO/pulls/$PR_NUMBER" > .gemini-review/diff.patch

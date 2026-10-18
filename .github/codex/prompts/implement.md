@@ -9,7 +9,8 @@ Lies zuerst `AGENTS.md` und `docs/PROCESS.md` und halte dich strikt daran.
   die Spezifikation einen anderen Branch-Namen nennt.
 - **Kein** `git commit`, **kein** `git push`, **kein** Pull Request. Das erledigt der Workflow
   nach deinem Lauf. Ändere nur Dateien im Arbeitsverzeichnis.
-- Keine Änderungen in `e2e/` und `.github/`. Der Workflow bricht ab, wenn dort etwas geändert wird.
+- Keine Änderungen in `e2e/`, `.github/`, `scripts/` sowie an `GEMINI.md`, `AGENTS.md` und `CLAUDE.md`.
+  Der Workflow bricht ab, wenn dort etwas geändert wird.
 - Es gibt keinen Netzwerkzugriff. Die Maven-Abhängigkeiten liegen bereits im lokalen Cache:
   baue und teste mit `mvn -o -B verify`. Am Ende muss dieser Befehl grün sein.
 - Setze die Akzeptanzkriterien um, nicht mehr und nicht weniger. Alle `data-testid` exakt
