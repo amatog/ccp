@@ -18,7 +18,7 @@
 //   failed: FAILURE_REASON (optional)
 //   spec:   SPEC_OUT
 //   review: PR_URL, REVIEW_URL, RECOMMENDATION
-//   tests-start: SPEC_OUT, PROMPT_TEMPLATE, PROMPT_OUT, PR_URL, GITHUB_OUTPUT (feature)
+//   tests-start: SPEC_OUT, PROMPT_TEMPLATE, PROMPT_OUT, FIX_TEMPLATE/FIX_OUT (optional), PR_URL, GITHUB_OUTPUT (feature)
 //   tests-done:  PR_URL, COMMENT_URL, TEST_FILES, PASSED, FAILED, COST_USD
 //   tests-failed: PR_URL, FAILURE_REASON (optional)
 // Mit DRY_RUN=1 und SPEC_FIXTURE=<json-Datei> läuft das Skript ohne JIRA (für lokale Tests).
@@ -166,8 +166,9 @@ async function testsStart() {
     `# ${ISSUE_KEY}: ${summary}\n\n## Beschreibung\n\n${(issue.fields.description || '(keine Beschreibung)').trim()}\n\n` +
     `## Spezifikation (massgebend)\n\n${spec.body.trim()}\n`);
   const values = { ISSUE_KEY, SUMMARY: summary, FEATURE: feature };
-  writeFileSync(env.PROMPT_OUT, readFileSync(env.PROMPT_TEMPLATE, 'utf8')
-    .replace(/\{\{(ISSUE_KEY|SUMMARY|FEATURE)\}\}/g, (_, k) => values[k]));
+  const fill = (tpl) => readFileSync(tpl, 'utf8').replace(/\{\{(ISSUE_KEY|SUMMARY|FEATURE)\}\}/g, (_, k) => values[k]);
+  writeFileSync(env.PROMPT_OUT, fill(env.PROMPT_TEMPLATE));
+  if (env.FIX_TEMPLATE && env.FIX_OUT) writeFileSync(env.FIX_OUT, fill(env.FIX_TEMPLATE));
   if (env.GITHUB_OUTPUT) appendFileSync(env.GITHUB_OUTPUT, `feature=${feature}\n`);
 
   await comment(`*Claude schreibt Playwright-Tests* (Prozessschritt 7)\n* Pull Request: [${env.PR_URL}|${env.PR_URL}]\n* Lauf: [GitHub Actions|${env.RUN_URL || '-'}]`);
@@ -187,7 +188,8 @@ async function testsDone() {
     `* Lauf: [GitHub Actions|${env.RUN_URL || '-'}]${cost}\n\n` +
     (failed === 0
       ? 'Nächste Schritte: CI und Gemini-Review laufen automatisch, danach Freigabe und Merge.'
-      : 'Mindestens ein Test schlägt fehl. Befunde im PR-Kommentar prüfen, bevor freigegeben wird.'),
+      : 'Mindestens ein Test schlägt fehl. Befunde im PR-Kommentar prüfen, bevor freigegeben wird.') +
+    (env.REVIEW_STARTED === 'true' ? '' : '\n\nDas Gemini-Review wurde nicht automatisch gestartet.'),
   );
 }
 
@@ -197,7 +199,9 @@ async function testsFailed() {
     `(x) *Automatische Playwright-Tests fehlgeschlagen*\n` +
     `* Grund: ${reason}\n* Pull Request: [${env.PR_URL || '-'}|${env.PR_URL || '-'}]\n` +
     `* Details: [GitHub Actions|${env.RUN_URL || '-'}]\n\n` +
-    `Neuer Versuch: in GitHub unter Actions → «Claude – Playwright-Tests schreiben» → Run workflow.`,
+    `Es wurden keine Tests committet und kein Gemini-Review gestartet.\n` +
+    `Neuer Versuch: in GitHub unter Actions → «Claude – Playwright-Tests schreiben» → Run workflow ` +
+    `(Review danach unter «Gemini – Pull Request reviewen»).`,
   );
 }
 

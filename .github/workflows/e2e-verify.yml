@@ -1,0 +1,143 @@
+# Baustein von claude-tests.yml: App aus dem PR-Stand bauen und die Playwright-Suite ausführen.
+# In diesem Job gibt es KEINE Geheimnisse – hier läuft PR-Code (App und Tests).
+name: Playwright-Suite prüfen (Baustein)
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        type: string
+        required: true
+      tests_artifact:
+        type: string
+        required: true
+      results_artifact:
+        type: string
+        required: true
+    outputs:
+      passed:
+        value: ${{ jobs.verify.outputs.passed }}
+      failed:
+        value: ${{ jobs.verify.outputs.failed }}
+      compile_ok:
+        value: ${{ jobs.verify.outputs.compile_ok }}
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    outputs:
+      passed: ${{ steps.report.outputs.passed }}
+      failed: ${{ steps.report.outputs.failed }}
+      compile_ok: ${{ steps.tsc.outputs.ok }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.tests_artifact }}
+          path: ${{ runner.temp }}/art
+
+      - name: Tests übernehmen
+        run: rm -rf e2e/tests && cp -r "$RUNNER_TEMP/art/tests" e2e/tests
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: e2e/package-lock.json
+
+      - name: App bauen und starten
+        run: |
+          mvn -B -q -DskipTests package
+          nohup java -jar target/app.jar --server.port=8080 > "$RUNNER_TEMP/app.log" 2>&1 &
+          for i in $(seq 1 60); do
+            curl -fs http://localhost:8080/actuator/health && exit 0
+            sleep 2
+          done
+          cat "$RUNNER_TEMP/app.log"; exit 1
+
+      - name: Playwright einrichten
+        working-directory: e2e
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+
+      - name: TypeScript prüfen
+        id: tsc
+        working-directory: e2e
+        run: |
+          if npx tsc --noEmit -p . > "$RUNNER_TEMP/tsc.log" 2>&1; then echo "ok=true" >> "$GITHUB_OUTPUT"
+          else echo "ok=false" >> "$GITHUB_OUTPUT"; cat "$RUNNER_TEMP/tsc.log"; fi
+
+      - name: Playwright-Suite ausführen
+        working-directory: e2e
+        run: npx playwright test || true
+
+      - name: Ergebnis zusammenfassen
+        id: report
+        working-directory: e2e
+        run: |
+          mkdir -p "$RUNNER_TEMP/out"
+          node --input-type=module - "$RUNNER_TEMP/tsc.log" "$RUNNER_TEMP/out/results.md" >> "$GITHUB_OUTPUT" <<'JS'
+          import { readFileSync, existsSync, writeFileSync } from 'node:fs';
+          const [tscLog, out] = process.argv.slice(2);
+          const strip = (s) => String(s ?? '').replace(/\u001b\[[0-9;]*m/g, '');
+          const lines = ['## Ergebnis der Testausführung', ''];
+          let passed = 0, failed = 0;
+          const file = 'test-results/results.json';
+          if (existsSync(file)) {
+            const r = JSON.parse(readFileSync(file, 'utf8'));
+            passed = (r.stats?.expected ?? 0) + (r.stats?.flaky ?? 0);
+            failed = r.stats?.unexpected ?? 0;
+            lines.push(`${passed} bestanden, ${failed} fehlgeschlagen.`, '');
+            const fails = [];
+            const walk = (s, path = []) => {
+              const here = s.title ? [...path, s.title] : path;
+              for (const spec of s.specs ?? []) {
+                if (spec.ok) continue;
+                const err = spec.tests?.flatMap((t) => t.results ?? []).map((x) => x.error?.message).find(Boolean);
+                fails.push(`- **${[...here, spec.title].join(' › ')}**\n\n  \`\`\`\n  ${strip(err).slice(0, 800).replace(/\n/g, '\n  ')}\n  \`\`\``);
+              }
+              for (const c of s.suites ?? []) walk(c, here);
+            };
+            for (const s of r.suites ?? []) walk(s);
+            if (fails.length) lines.push('### Fehlgeschlagene Tests', '', ...fails, '');
+          } else {
+            failed = 1;
+            lines.push('Playwright hat keine Resultate geschrieben (siehe Lauf-Protokoll).', '');
+          }
+          const tsc = existsSync(tscLog) ? strip(readFileSync(tscLog, 'utf8')).trim() : '';
+          if (tsc) lines.push('### TypeScript-Fehler', '', '```', tsc.slice(0, 3000), '```', '');
+          writeFileSync(out, lines.join('\n'));
+          console.log(`passed=${passed}`);
+          console.log(`failed=${failed}`);
+          JS
+          cp test-results/results.json "$RUNNER_TEMP/out/" 2>/dev/null || true
+          cat "$RUNNER_TEMP/out/results.md"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ inputs.results_artifact }}
+          path: ${{ runner.temp }}/out
+          retention-days: 7
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ inputs.results_artifact }}-report
+          path: e2e/playwright-report
+          retention-days: 7

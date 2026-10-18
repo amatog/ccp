@@ -4,20 +4,22 @@ Ziel: Sobald Codex einen Pull Request eröffnet hat, schreibt Claude die Playwri
 
 ```
 codex-implement.yml eröffnet PR
-  → startet claude-tests.yml (PR-Nummer, Ticket)
-       1. PR ermitteln; nur von main aus, nur PRs aus diesem Repository
-       2. main (Werkzeuge, CLAUDE.md, Auftrag) und den PR-Stand (Ordner pr/) auschecken
-       3. Spezifikation aus JIRA laden, Auftrag aus .github/claude/prompts/e2e-tests.md bauen
-       4. App aus dem PR-Stand bauen und auf localhost:8080 starten, Playwright einrichten
-       5. Claude Code (nicht-interaktiv) schreibt e2e/tests/<feature>.spec.ts und führt die Tests aus
-       6. Prüfung: nur Dateien unter e2e/tests/ geändert? TypeScript ok?
-       7. Workflow führt die gesamte Suite selbst aus (Kontrolllauf)
-       8. Commit + Push auf den PR-Branch, Zusammenfassung als PR-Kommentar
-       9. CI starten, Ergebnis ins JIRA-Ticket
-  → startet gemini-review.yml (auch wenn Tests fehlschlagen)
+  → startet claude-tests.yml (PR-Nummer, Ticket) – jeder Job auf einem frischen Runner:
+
+    prepare   JIRA-Zugang          Spezifikation + Auftrag bereitlegen            kein PR-Code
+    generate  Anthropic-Schlüssel  Claude schreibt e2e/tests/<feature>.spec.ts    kein PR-Code, keine Shell
+    verify    keine Geheimnisse    App aus PR-Stand starten, Suite ausführen      hier läuft PR-Code
+    fix       Anthropic-Schlüssel  nur bei Fehlschlägen: Korrekturrunde           kein PR-Code, keine Shell
+    verify2   keine Geheimnisse    erneute Ausführung                             hier läuft PR-Code
+    publish   GitHub + JIRA        Commit auf PR-Branch, PR-Kommentar, CI starten kein PR-Code
+                                   → Gemini-Review starten, Ergebnis ins Ticket
 ```
 
+Bausteine: `claude-generate.yml` (Claude) und `e2e-verify.yml` (Ausführung). Claude kann selbst keine Befehle ausführen; die Testergebnisse aus `verify` bekommt es in der Korrekturrunde als Datei.
+
 Schlägt ein neuer Test fehl, weil die App von der Spezifikation abweicht, passt Claude den Test **nicht** an die App an. Der Test wird trotzdem committet, die CI am PR wird rot, und die Abweichung steht als Befund im PR-Kommentar und im Ticket. So bleibt ein echter Fehler sichtbar.
+
+Schlägt das Erzeugen selbst fehl (z. B. API-Fehler), wird nichts committet und kein Gemini-Review gestartet; das Ticket erhält eine Fehlermeldung.
 
 ## Einmalige Einrichtung
 
@@ -49,7 +51,7 @@ Als Repository-**Variablen** (*Settings → Secrets and variables → Actions �
 ## Tests starten
 
 - **Automatisch:** am Ende jedes erfolgreichen Codex-Laufs.
-- **Manuell** (z. B. für einen bestehenden PR oder nach Korrekturen): GitHub → *Actions → «Claude – Playwright-Tests schreiben» → Run workflow* → PR-Nummer. Mit «Danach Gemini-Review starten» lässt sich das Review mitstarten.
+- **Manuell** (z. B. für einen bestehenden PR): GitHub → *Actions → «Claude – Playwright-Tests schreiben» → Run workflow* → PR-Nummer. «Danach Gemini-Review starten» ist standardmässig an.
 
 ## Wo der Verlauf nachzulesen ist
 
@@ -61,9 +63,10 @@ Als Repository-**Variablen** (*Settings → Secrets and variables → Actions �
 
 ## Sicherheit
 
-- Claude Code läuft mit `--bare` (lädt keine Hooks, MCP-Server oder Einstellungen aus dem PR-Stand) und `--permission-mode dontAsk`: erlaubt sind nur Lesen, Schreiben von Dateien sowie `npx playwright test` und `npx tsc`. Alles andere wird abgelehnt.
-- Im Claude-Schritt ist nur `ANTHROPIC_API_KEY` gesetzt; GitHub- und JIRA-Zugangsdaten sind dort nicht verfügbar.
-- Werkzeuge und Regeln (`scripts/jira-codex.mjs`, `CLAUDE.md`, Auftragsvorlage) kommen aus `main`; aus dem PR-Stand wird nur die App gebaut und getestet.
-- Änderungen ausserhalb von `e2e/tests/` brechen den Lauf ab, bevor etwas committet wird.
-- Der Workflow führt die Suite unabhängig von Claude selbst aus; die Zahlen im Ticket stammen aus diesem Kontrolllauf.
+- **PR-Code läuft nie zusammen mit Geheimnissen.** App und Tests werden nur in `verify`/`verify2` ausgeführt, und dort ist kein einziges Geheimnis gesetzt. Jeder Job läuft auf einem frischen Runner, nichts bleibt zwischen Jobs bestehen.
+- Claude Code läuft mit `--bare` (keine Hooks, MCP-Server oder Einstellungen aus dem PR-Stand), `--permission-mode dontAsk` und **ohne Shell**: erlaubt sind nur Lesen und das Schreiben von Dateien.
+- Im Claude-Job ist nur `ANTHROPIC_API_KEY` gesetzt; GitHub- und JIRA-Zugangsdaten gibt es dort nicht. Pro Lauf gilt eine Budget-Obergrenze.
+- Werkzeuge und Regeln (`scripts/jira-codex.mjs`, `CLAUDE.md`, Auftragsvorlagen) kommen aus `main`. Nur von `main` aus startbar, nur für PRs aus diesem Repository.
+- Änderungen ausserhalb von `e2e/tests/` brechen den Lauf ab – geprüft im Claude-Job und erneut vor dem Commit.
+- Die Zahlen im Ticket stammen aus dem Kontrolllauf des Workflows, nicht aus Claudes Angaben.
 - Claude committet nicht selbst und mergt nie. Freigabe und Merge bleiben beim Menschen.

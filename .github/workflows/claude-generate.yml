@@ -1,0 +1,150 @@
+# Baustein von claude-tests.yml: Claude schreibt bzw. korrigiert Playwright-Tests.
+# Claude hat KEINE Shell und führt nichts aus. Aus dem PR-Stand wird kein Code gestartet.
+# Einziges Geheimnis in diesem Job: ANTHROPIC_API_KEY.
+name: Claude – Tests erzeugen (Baustein)
+
+on:
+  workflow_call:
+    inputs:
+      sha:
+        type: string
+        required: true
+      mode:
+        description: 'new = neue Tests, fix = Korrekturrunde'
+        type: string
+        required: true
+      task_artifact:
+        type: string
+        required: true
+      tests_in:
+        description: 'Artefakt mit bisherigen Tests (nur fix)'
+        type: string
+        default: ''
+      results_in:
+        description: 'Artefakt mit Testergebnissen (nur fix)'
+        type: string
+        default: ''
+      tests_out:
+        type: string
+        required: true
+    secrets:
+      ANTHROPIC_API_KEY:
+        required: true
+    outputs:
+      cost:
+        value: ${{ jobs.generate.outputs.cost }}
+      reason:
+        value: ${{ jobs.generate.outputs.reason }}
+
+permissions:
+  contents: read
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      cost: ${{ steps.claude.outputs.cost }}
+      reason: ${{ steps.claude.outputs.reason || steps.gate.outputs.reason }}
+    steps:
+      # main: CLAUDE.md (Regeln für Claude)
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # PR-Stand: wird nur gelesen und um Testdateien ergänzt
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.sha }}
+          path: pr
+          persist-credentials: false
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ inputs.task_artifact }}
+          path: ${{ runner.temp }}/task
+
+      - uses: actions/download-artifact@v4
+        if: inputs.tests_in != ''
+        with:
+          name: ${{ inputs.tests_in }}
+          path: ${{ runner.temp }}/tests-in
+
+      - uses: actions/download-artifact@v4
+        if: inputs.results_in != ''
+        with:
+          name: ${{ inputs.results_in }}
+          path: ${{ runner.temp }}/results-in
+
+      - name: Arbeitsstand vorbereiten
+        env:
+          MODE: ${{ inputs.mode }}
+        run: |
+          mkdir -p pr/.claude-task
+          echo ".claude-task/" >> pr/.git/info/exclude
+          cp "$RUNNER_TEMP/task/spec.md" pr/.claude-task/spec.md
+          if [ "$MODE" = "fix" ]; then
+            rm -rf pr/e2e/tests && cp -r "$RUNNER_TEMP/tests-in/tests" pr/e2e/tests
+            cp "$RUNNER_TEMP/results-in/results.md" pr/.claude-task/results.md
+            cp "$RUNNER_TEMP/task/task-fix.md" "$RUNNER_TEMP/prompt.md"
+          else
+            cp "$RUNNER_TEMP/task/task.md" "$RUNNER_TEMP/prompt.md"
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Claude Code installieren
+        run: npm install -g @anthropic-ai/claude-code && claude --version
+
+      # --bare: keine Hooks/MCP/Einstellungen aus dem PR-Stand. dontAsk + keine Shell:
+      # Claude darf nur lesen und Dateien schreiben.
+      - name: Claude schreibt die Tests
+        id: claude
+        working-directory: pr/e2e
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          CLAUDE_MODEL: ${{ vars.CLAUDE_MODEL }}
+          BUDGET: ${{ vars.CLAUDE_MAX_BUDGET_USD || '5' }}
+        run: |
+          model_args=()
+          [ -n "$CLAUDE_MODEL" ] && model_args=(--model "$CLAUDE_MODEL")
+          claude --bare -p "$(cat "$RUNNER_TEMP/prompt.md")" \
+            --append-system-prompt-file "$GITHUB_WORKSPACE/CLAUDE.md" \
+            --add-dir .. \
+            --permission-mode dontAsk \
+            --allowedTools "Read,Glob,Grep,Write,Edit" \
+            --disallowedTools "Bash" \
+            --max-budget-usd "$BUDGET" \
+            --output-format json "${model_args[@]}" > "$RUNNER_TEMP/claude.json" || true
+          if ! jq -e . "$RUNNER_TEMP/claude.json" > /dev/null 2>&1; then
+            echo "reason=Claude Code lieferte keine auswertbare Antwort." >> "$GITHUB_OUTPUT"; exit 1
+          fi
+          jq -r '.result // ""' "$RUNNER_TEMP/claude.json" > "$RUNNER_TEMP/summary.md"
+          echo "cost=$(jq -r '.total_cost_usd // 0' "$RUNNER_TEMP/claude.json")" >> "$GITHUB_OUTPUT"
+          if [ "$(jq -r '.is_error // false' "$RUNNER_TEMP/claude.json")" = "true" ]; then
+            echo "reason=Claude Code meldete einen Fehler: $(head -c 200 "$RUNNER_TEMP/summary.md" | tr '\n' ' ')" >> "$GITHUB_OUTPUT"
+            exit 1
+          fi
+
+      - name: Änderungen prüfen
+        id: gate
+        working-directory: pr
+        run: |
+          changed="$(git status --porcelain --untracked-files=all | sed -E 's/^.{3}//')"
+          if ! ls e2e/tests/*.spec.ts > /dev/null 2>&1 || [ -z "$changed" ]; then
+            echo "reason=Claude hat keine Testdatei angelegt." >> "$GITHUB_OUTPUT"; exit 1
+          fi
+          if echo "$changed" | grep -vE '^e2e/tests/[^/]+\.ts$'; then
+            echo "reason=Claude hat Dateien ausserhalb von e2e/tests/ geändert." >> "$GITHUB_OUTPUT"; exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/out"
+          cp -r e2e/tests "$RUNNER_TEMP/out/tests"
+          cp "$RUNNER_TEMP/summary.md" "$RUNNER_TEMP/out/summary.md"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.tests_out }}
+          path: ${{ runner.temp }}/out
+          retention-days: 7
