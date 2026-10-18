@@ -6,6 +6,7 @@ import ch.amato.ccp.repository.DemoDataRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -26,7 +27,14 @@ public class TransactionService {
 
     /** Transaktionen eines Kunden, neueste zuerst. */
     public List<Transaction> transactionsFor(String username) {
+        return transactionsFor(username, null, null);
+    }
+
+    /** Transaktionen innerhalb der optionalen, inklusiven Datumsgrenzen. */
+    public List<Transaction> transactionsFor(String username, LocalDate from, LocalDate to) {
         return repository.findTransactions(username).stream()
+                .filter(tx -> from == null || !tx.date().isBefore(from))
+                .filter(tx -> to == null || !tx.date().isAfter(to))
                 .sorted(Comparator.comparing(Transaction::date).reversed())
                 .toList();
     }
