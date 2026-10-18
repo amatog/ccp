@@ -28,6 +28,59 @@ class PortalControllerTest {
 
     @Test
     @WithMockUser(username = "anna")
+    void everyCategoryCellContainsExactlyOneBadge() throws Exception {
+        mvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//td[@data-testid='tx-category']").nodeCount(6))
+                .andExpect(xpath("//td[@data-testid='tx-category'][count(*)=1"
+                        + " and count(span[@data-testid='category-badge'])=1]").nodeCount(6));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "A-1001, Lebensmittel, lebensmittel",
+            "A-1002, Reisen, reisen",
+            "A-1003, Shopping, shopping",
+            "A-1004, Gastronomie, gastronomie",
+            "A-1005, Elektronik, elektronik",
+            "A-1006, Telekom, telekom"
+    })
+    @WithMockUser(username = "anna")
+    void categoryBadgeShowsTextKeyAndColorClass(String id, String category, String key) throws Exception {
+        String cell = "//*[@data-transaction-id='" + id + "']/td[@data-testid='tx-category']";
+        String badge = cell + "/span[@data-testid='category-badge']";
+        mvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("normalize-space(" + cell + ")").string(category))
+                .andExpect(xpath(badge).string(category))
+                .andExpect(xpath(badge + "/@data-category").string(key))
+                .andExpect(xpath(badge + "/@class").string("badge badge--" + key));
+    }
+
+    @Test
+    @WithMockUser(username = "marco")
+    void travelDebitAndCreditUseSameBadgeKeyAndColorClass() throws Exception {
+        mvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-transaction-id='M-2002' or @data-transaction-id='M-2003']"
+                        + "/td[@data-testid='tx-category']/span[@data-testid='category-badge'"
+                        + " and @data-category='reisen' and @class='badge badge--reisen']").nodeCount(2));
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
+    void dateFilterRetainsCategoryBadges() throws Exception {
+        mvc.perform(get("/transactions").param("from", "2026-10-01").param("to", "2026-10-05"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='category-badge']").nodeCount(2))
+                .andExpect(xpath("//*[@data-transaction-id='A-1001']//span[@data-testid='category-badge']")
+                        .string("Lebensmittel"))
+                .andExpect(xpath("//*[@data-transaction-id='A-1002']//span[@data-testid='category-badge']")
+                        .string("Reisen"));
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
     void annaSeesBookingCountsAfterBalanceInAccountSummary() throws Exception {
         mvc.perform(get("/transactions"))
                 .andExpect(status().isOk())

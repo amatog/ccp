@@ -27,4 +27,18 @@ public record Transaction(
     public BigDecimal signedAmount() {
         return type == Type.DEBIT ? amount.negate() : amount;
     }
+
+    /** Stabiler Schlüssel für die Darstellung der Kategorie als Badge. */
+    public String categoryKey() {
+        return switch (category) {
+            case "Lebensmittel" -> "lebensmittel";
+            case "Reisen" -> "reisen";
+            case "Shopping" -> "shopping";
+            case "Gastronomie" -> "gastronomie";
+            case "Elektronik" -> "elektronik";
+            case "Telekom" -> "telekom";
+            case "Mobilität" -> "mobilitaet";
+            default -> "andere";
+        };
+    }
 }
