@@ -1,0 +1,162 @@
+# Prozessschritt 2: Codex implementiert ein spezifiziertes JIRA-Ticket und eröffnet einen Pull Request.
+#
+# Auslöser: JIRA-Automation-Regel, sobald ein Ticket das Label «codex-bereit» erhält
+# (POST auf die workflow_dispatch-API von GitHub). Manuell startbar über «Run workflow».
+# Einrichtung: docs/CODEX-SETUP.md
+name: Codex – Ticket implementieren
+
+on:
+  workflow_dispatch:
+    inputs:
+      issue_key:
+        description: 'JIRA-Ticket, z. B. CCP-6'
+        required: true
+
+concurrency:
+  group: codex-${{ inputs.issue_key }}
+  cancel-in-progress: false
+
+permissions:
+  contents: write        # Branch pushen
+  pull-requests: write   # Pull Request eröffnen
+  actions: write         # CI-Workflow für den neuen Branch starten
+
+jobs:
+  implement:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    # Secrets werden nur in den Schritten gesetzt, die sie brauchen – nie im Codex-Schritt.
+    env:
+      ISSUE_KEY: ${{ inputs.issue_key }}
+      RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      REPO: ${{ github.repository }}
+      JIRA_BASE_URL: ${{ vars.JIRA_BASE_URL || 'https://giuseppeamato.atlassian.net' }}
+    steps:
+      # Keine Git-Zugangsdaten im Checkout: Codex soll nicht selbst pushen können.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Spezifikation aus JIRA laden und Auftrag erstellen
+        id: task
+        env:
+          PROMPT_TEMPLATE: .github/codex/prompts/implement.md
+          PROMPT_OUT: .codex-task.md
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          echo ".codex-task.md" >> .git/info/exclude
+          node scripts/jira-codex.mjs start
+
+      - name: Branch anlegen
+        env:
+          BRANCH: ${{ steps.task.outputs.branch }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh api "repos/$REPO/branches/$BRANCH" --silent 2>/dev/null; then
+            echo "Branch $BRANCH existiert bereits. Bitte bestehenden PR verwenden oder Branch löschen."
+            exit 1
+          fi
+          git switch -c "$BRANCH"
+
+      # Lädt alle Maven-Abhängigkeiten in den Cache, damit Codex ohne Netzwerk bauen kann.
+      - name: Ausgangslage prüfen (Build und Unit-Tests vor Codex)
+        run: mvn -B verify
+
+      - name: Codex ausführen
+        id: codex
+        uses: openai/codex-action@v1
+        with:
+          openai-api-key: ${{ secrets.OPENAI_API_KEY }}
+          prompt-file: .codex-task.md
+          output-file: ${{ runner.temp }}/codex-final.md
+          safety-strategy: drop-sudo
+
+      - name: Änderungen prüfen
+        id: changes
+        run: |
+          git add -A
+          changed="$(git diff --cached --name-only)"
+          if [ -z "$changed" ]; then
+            echo "reason=Codex hat keine Dateien geändert." >> "$GITHUB_OUTPUT"
+            echo "Codex hat keine Dateien geändert."; exit 1
+          fi
+          if echo "$changed" | grep -E '^(e2e/|\.github/)'; then
+            echo "reason=Codex hat geschützte Dateien in e2e/ oder .github/ geändert." >> "$GITHUB_OUTPUT"
+            echo "Geschützte Dateien geändert – Abbruch."; exit 1
+          fi
+          {
+            echo "files<<CHANGED_EOF"
+            echo "$changed"
+            echo "CHANGED_EOF"
+          } >> "$GITHUB_OUTPUT"
+          echo "Geänderte Dateien:"; echo "$changed"
+
+      - name: Build und Unit-Tests nach Codex
+        id: verify
+        run: mvn -B verify
+
+      - name: Commit und Push
+        env:
+          BRANCH: ${{ steps.task.outputs.branch }}
+          TITLE: ${{ steps.task.outputs.title }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "Codex (GitHub Actions)"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "$TITLE" -m "Automatisch umgesetzt von Codex. Lauf: $RUN_URL"
+          git push -q "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" "HEAD:refs/heads/$BRANCH"
+
+      - name: Pull Request eröffnen
+        id: pr
+        env:
+          BRANCH: ${{ steps.task.outputs.branch }}
+          TITLE: ${{ steps.task.outputs.title }}
+          FINAL: ${{ runner.temp }}/codex-final.md
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          body="$RUNNER_TEMP/pr-body.md"
+          if [ -s "$FINAL" ]; then cat "$FINAL" > "$body"; else echo "_Codex hat keine Schlussmeldung geliefert._" > "$body"; fi
+          printf '\n\n---\nJIRA: %s/browse/%s · Codex-Lauf: %s\n\n🤖 Automatisch erstellt von Codex über GitHub Actions\n' \
+            "${JIRA_BASE_URL%/}" "$ISSUE_KEY" "$RUN_URL" >> "$body"
+          url="$(gh pr create --repo "$REPO" --base main --head "$BRANCH" --title "$TITLE" --body-file "$body")"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Pull Request: $url"
+
+      # PRs, die mit dem GITHUB_TOKEN erstellt werden, lösen keine weiteren Workflows aus.
+      # Deshalb wird die CI für den neuen Branch ausdrücklich gestartet.
+      - name: CI für den Pull Request starten
+        env:
+          BRANCH: ${{ steps.task.outputs.branch }}
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --repo "$REPO" --ref "$BRANCH"
+
+      - name: Pull Request in JIRA melden
+        env:
+          PR_URL: ${{ steps.pr.outputs.url }}
+          BRANCH: ${{ steps.task.outputs.branch }}
+          CHANGED_FILES: ${{ steps.changes.outputs.files }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: node scripts/jira-codex.mjs done
+
+      - name: Fehlschlag in JIRA melden
+        if: failure() && steps.task.outputs.reported != 'true'
+        env:
+          FAILURE_REASON: ${{ steps.changes.outputs.reason || (steps.verify.outcome == 'failure' && 'Build oder Unit-Tests nach den Codex-Änderungen rot.') || '' }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: node scripts/jira-codex.mjs failed
