@@ -10,7 +10,7 @@ Claude: Spezifikation als Kommentar ins Ticket, dann Label «codex-bereit» setz
        2. Ticket → «In Arbeit», Kommentar «Codex gestartet»
        3. Branch feature/CCP-n-…, Maven-Abhängigkeiten laden, Ausgangslage prüfen
        4. Codex (openai/codex-action) setzt um – ohne Netzwerk, ohne Git-Zugang, ohne Secrets
-       5. Prüfung: Änderungen vorhanden? Nichts in e2e/ oder .github/? mvn -B verify grün?
+       5. Prüfung: Änderungen vorhanden? Nichts in geschützten Pfaden? mvn -B verify grün?
        6. Commit, Push, Pull Request «CCP-n …» (Beschreibung = Schlussmeldung von Codex)
        7. CI für den PR starten, PR-Link ins Ticket, Label wieder entfernen
   → bei Fehler: Kommentar «Codex-Lauf fehlgeschlagen» mit Grund und Link
@@ -99,7 +99,8 @@ Aktion *Webanfrage senden*:
 
 - Codex läuft in einer Sandbox ohne Netzwerk und ohne Git-Zugangsdaten. Secrets sind im Codex-Schritt nicht gesetzt.
 - Ticketinhalt gilt als Anforderung, nicht als Anweisung an den Workflow. Der Auftrag weist Codex an, widersprüchliche Anweisungen aus dem Ticket nicht zu befolgen.
-- Änderungen in `e2e/` oder `.github/` brechen den Lauf ab.
+- Änderungen in `e2e/`, `.github/`, `scripts/` oder an `GEMINI.md`, `AGENTS.md`, `CLAUDE.md` brechen den Lauf ab.
+- Das JIRA-Skript wird vor dem Codex-Lauf gesichert; alle Schritte mit Zugangsdaten nutzen diese Kopie, nie das von Codex bearbeitete Arbeitsverzeichnis.
 - Codex mergt nie. Freigabe und Merge bleiben beim Menschen.
 - Das GitHub-Token für JIRA kann nur Workflows starten, keinen Code ändern.
 

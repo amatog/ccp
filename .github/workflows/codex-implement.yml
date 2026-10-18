@@ -57,7 +57,10 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
         run: |
           echo ".codex-task.md" >> .git/info/exclude
-          node scripts/jira-codex.mjs start
+          # Vertrauenswürdige Kopie des JIRA-Skripts vor dem Codex-Lauf sichern.
+          # Alle späteren Schritte mit Zugangsdaten nutzen diese Kopie, nie das Arbeitsverzeichnis.
+          cp scripts/jira-codex.mjs "$RUNNER_TEMP/jira-codex.mjs"
+          node "$RUNNER_TEMP/jira-codex.mjs" start
 
       - name: Branch anlegen
         env:
@@ -92,8 +95,9 @@ jobs:
             echo "reason=Codex hat keine Dateien geändert." >> "$GITHUB_OUTPUT"
             echo "Codex hat keine Dateien geändert."; exit 1
           fi
-          if echo "$changed" | grep -E '^(e2e/|\.github/)'; then
-            echo "reason=Codex hat geschützte Dateien in e2e/ oder .github/ geändert." >> "$GITHUB_OUTPUT"
+          # Geschützt: Tests, Workflows, Skripte und die Anweisungsdateien der drei Agents.
+          if echo "$changed" | grep -E '^(e2e/|\.github/|scripts/|GEMINI\.md$|AGENTS\.md$|CLAUDE\.md$)'; then
+            echo "reason=Codex hat geschützte Dateien geändert (e2e/, .github/, scripts/ oder Agent-Anweisungen)." >> "$GITHUB_OUTPUT"
             echo "Geschützte Dateien geändert – Abbruch."; exit 1
           fi
           {
@@ -150,7 +154,14 @@ jobs:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-        run: node scripts/jira-codex.mjs done
+        run: node "$RUNNER_TEMP/jira-codex.mjs" done
+
+      # Prozessschritt 4: Gemini-Review für den neuen PR starten (gemini-review.yml).
+      - name: Gemini-Review starten
+        env:
+          PR_URL: ${{ steps.pr.outputs.url }}
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run gemini-review.yml --repo "$REPO" --ref main -f pr_number="${PR_URL##*/}" -f issue_key="$ISSUE_KEY"
 
       - name: Fehlschlag in JIRA melden
         if: failure() && steps.task.outputs.reported != 'true'
@@ -159,4 +170,5 @@ jobs:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-        run: node scripts/jira-codex.mjs failed
+        run: |
+          if [ -f "$RUNNER_TEMP/jira-codex.mjs" ]; then node "$RUNNER_TEMP/jira-codex.mjs" failed; else echo "JIRA-Skript nicht gesichert – keine Meldung möglich."; fi
