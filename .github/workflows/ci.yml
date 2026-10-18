@@ -1,8 +1,19 @@
-# Läuft bei jedem Pull Request: Build, Unit-Tests und Playwright gegen eine lokal gestartete App.
+# Build, Unit-Tests und Playwright gegen eine lokal gestartete App.
+#
+# Auslöser (CCP-12):
+# - push auf jeden Branch ausser main: Pushes von Menschen auf Feature-Branches.
+#   Das Ergebnis hängt am Commit und erscheint damit auch im Pull Request.
+# - workflow_dispatch: von codex-implement.yml und claude-tests.yml gestartet.
+#   Deren Pushes laufen über das GITHUB_TOKEN und lösen selbst keinen Lauf aus.
+# Bewusst KEIN pull_request: Bei PRs, die github-actions[bot] eröffnet, legt GitHub
+# einen Lauf an, der nie startet (0 Jobs) und beim Mergen rot endet – ein doppelter,
+# irreführender Eintrag neben dem echten workflow_dispatch-Lauf.
+# main wird von deploy.yml abgedeckt.
 name: CI
 
 on:
-  pull_request:
+  push:
+    branches-ignore: [main]
   workflow_dispatch:
 
 jobs:
