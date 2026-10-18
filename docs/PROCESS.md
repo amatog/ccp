@@ -35,7 +35,7 @@ JIRA-Ticket (CCP-n)
 
 | Workflow | Auslöser | Was passiert |
 |---|---|---|
-| `.github/workflows/ci.yml` | Pull Request, manuell, vom Codex-Workflow | Build, Unit-Tests, App lokal starten, Playwright |
+| `.github/workflows/ci.yml` | Push auf Feature-Branches (nicht `main`), manuell, vom Codex- und Claude-Workflow | Build, Unit-Tests, App lokal starten, Playwright |
 | `.github/workflows/codex-implement.yml` | JIRA-Label `codex-bereit` (über JIRA-Automation), manuell | Spezifikation laden → Codex implementiert → Pull Request → Meldung ins Ticket. Einrichtung: [`CODEX-SETUP.md`](CODEX-SETUP.md) |
 | `.github/workflows/claude-tests.yml` | Ende von `codex-implement.yml`, manuell (PR-Nummer) | Spezifikation laden → Claude schreibt Tests (ohne Shell) → Ausführung in getrenntem Job ohne Geheimnisse → ggf. Korrekturrunde → Commit auf PR-Branch → CI + Gemini-Review starten → Ergebnis ins Ticket. Bausteine: `claude-generate.yml`, `e2e-verify.yml`. Einrichtung: [`CLAUDE-TESTS-SETUP.md`](CLAUDE-TESTS-SETUP.md) |
 | `.github/workflows/gemini-review.yml` | Ende von `claude-tests.yml`, manuell (PR-Nummer) | Spezifikation laden → Gemini prüft nach `GEMINI.md` → Review-Kommentar am PR → Empfehlung ins Ticket. Einrichtung: [`GEMINI-SETUP.md`](GEMINI-SETUP.md) |
