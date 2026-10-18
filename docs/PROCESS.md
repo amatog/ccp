@@ -43,7 +43,7 @@ JIRA-Ticket (CCP-n)
 | Secret | Zweck | Status |
 |---|---|---|
 | `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` | Deployment per SSH | eingerichtet |
-| `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN` | Testreport ins Ticket | offen (ohne sie wird der Report übersprungen) |
+| `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN` | Testreport ins Ticket | eingerichtet (erfolgreich getestet mit CCP-5 am 16.10.2026) |
 
 ## Zielumgebung
 
