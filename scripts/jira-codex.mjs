@@ -40,17 +40,19 @@ switch (command) {
 // --- Befehle --------------------------------------------------------------------
 
 async function start() {
-  const issue = DRY_RUN
-    ? JSON.parse(readFileSync(env.SPEC_FIXTURE, 'utf8'))
-    : await jira('GET', `/rest/api/2/issue/${ISSUE_KEY}?fields=summary,description,comment`);
-
+  const fixture = DRY_RUN ? JSON.parse(readFileSync(env.SPEC_FIXTURE, 'utf8')) : null;
+  const issue = fixture ?? await jira('GET', `/rest/api/2/issue/${ISSUE_KEY}?fields=summary,description`);
   const summary = issue.fields.summary.trim();
-  const comments = issue.fields.comment?.comments ?? [];
+
   // Massgebend ist die neueste Spezifikation (Kommentar mit Überschrift «Spezifikation»).
-  const spec = [...comments].reverse().find((c) => /^\s*(h\d\.\s*|#+\s*)?Spezifikation/m.test(c.body));
+  const spec = fixture
+    ? [...(fixture.fields.comment?.comments ?? [])].reverse().find(isSpec)
+    : await findNewestSpec();
   if (!spec) {
     await comment(`(!) *Codex nicht gestartet:* Im Ticket ist keine Spezifikation (Kommentar mit Überschrift «Spezifikation») vorhanden.\nLauf: ${env.RUN_URL || '-'}`);
     await removeTriggerLabel();
+    // Fehler ist bereits gemeldet – der allgemeine Fehler-Schritt im Workflow soll nicht nochmals melden.
+    if (env.GITHUB_OUTPUT) appendFileSync(env.GITHUB_OUTPUT, 'reported=true\n');
     fail('Keine Spezifikation im Ticket gefunden.');
   }
 
@@ -110,6 +112,23 @@ async function jira(method, path, body) {
   });
   if (!res.ok) throw new Error(`JIRA ${method} ${path} fehlgeschlagen (${res.status}): ${await res.text()}`);
   return res.status === 204 ? {} : res.json();
+}
+
+function isSpec(c) {
+  return /^\s*(h\d\.\s*|#+\s*)?Spezifikation/m.test(c.body || '');
+}
+
+/** Blättert die Kommentare vom neuesten zum ältesten durch, bis eine Spezifikation gefunden ist. */
+async function findNewestSpec() {
+  const pageSize = 100;
+  for (let startAt = 0; ; startAt += pageSize) {
+    const page = await jira('GET',
+      `/rest/api/2/issue/${ISSUE_KEY}/comment?orderBy=-created&startAt=${startAt}&maxResults=${pageSize}`);
+    const comments = page.comments ?? [];
+    const spec = comments.find(isSpec);
+    if (spec) return spec;
+    if (comments.length === 0 || startAt + comments.length >= (page.total ?? 0)) return null;
+  }
 }
 
 /** Kommentar in Wiki-Markup (REST API v2). */

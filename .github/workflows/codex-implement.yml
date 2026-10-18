@@ -153,7 +153,7 @@ jobs:
         run: node scripts/jira-codex.mjs done
 
       - name: Fehlschlag in JIRA melden
-        if: failure() && steps.task.outcome == 'success'
+        if: failure() && steps.task.outputs.reported != 'true'
         env:
           FAILURE_REASON: ${{ steps.changes.outputs.reason || (steps.verify.outcome == 'failure' && 'Build oder Unit-Tests nach den Codex-Änderungen rot.') || '' }}
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
