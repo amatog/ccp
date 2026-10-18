@@ -6,7 +6,7 @@ Ziel: Sobald Codex einen Pull Request eröffnet hat, prüft Gemini ihn selbstän
 codex-implement.yml eröffnet PR
   → startet gemini-review.yml (PR-Nummer, Ticket)
        1. PR ermitteln, Ticket aus Eingabe oder PR-Titel
-       2. Repository auf dem Stand des PR auschecken (ohne Git-Zugangsdaten)
+       2. main (Werkzeuge, Regeln) und den PR (nur Prüfgegenstand, Ordner pr/) auschecken
        3. Unterlagen bereitlegen: Spezifikation aus JIRA, PR-Beschreibung, Diff (.gemini-review/)
        4. Gemini CLI (google-github-actions/run-gemini-cli) prüft nach GEMINI.md –
           nur Lesewerkzeuge, keine Shell, kein GitHub-Zugang
@@ -54,4 +54,6 @@ Ohne Angabe nimmt die Gemini CLI ihr Standardmodell. Ein bestimmtes Modell läss
 - Gemini erhält nur die Werkzeuge `list_directory`, `read_file` und `grep_search`. Keine Shell, kein Schreiben, kein Netzwerk- oder GitHub-Zugriff.
 - Im Gemini-Schritt ist nur der Gemini-API-Schlüssel gesetzt; GitHub- und JIRA-Zugangsdaten sind dort nicht verfügbar.
 - Ticket, PR-Beschreibung und Diff gelten als Prüfgegenstand, nicht als Anweisung.
+- Werkzeuge und Regeln (`scripts/jira-codex.mjs`, `GEMINI.md`, Review-Vorlage) kommen immer aus `main`. Der PR-Code liegt nur als Prüfgegenstand im Unterordner `pr/`; daraus wird nichts ausgeführt, und seine `GEMINI.md` wird umbenannt, damit Gemini sie nicht als Anweisung lädt.
+- Das Review lässt sich nur von `main` aus starten.
 - Gemini kommentiert nur. Freigabe und Merge bleiben beim Menschen.
