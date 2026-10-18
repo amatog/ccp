@@ -47,7 +47,7 @@ JIRA-Ticket (CCP-n)
 | `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY` | Deployment per SSH | eingerichtet |
 | `JIRA_BASE_URL`, `JIRA_EMAIL`, `JIRA_API_TOKEN` | Testreport und Codex-Meldungen ins Ticket | eingerichtet (erfolgreich getestet mit CCP-5 am 16.10.2026) |
 | `OPENAI_API_KEY` | Codex-Workflow | eingerichtet (erster Lauf mit CCP-6 am 18.10.2026) |
-| `GEMINI_API_KEY` | Gemini-Review | offen (siehe [`GEMINI-SETUP.md`](GEMINI-SETUP.md)) |
+| `GEMINI_API_KEY` | Gemini-Review | eingerichtet (erster Lauf mit PR #2 am 18.10.2026) |
 
 ## Zielumgebung
 
