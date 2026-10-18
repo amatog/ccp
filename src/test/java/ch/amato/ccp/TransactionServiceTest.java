@@ -11,12 +11,47 @@ import java.time.LocalDate;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 class TransactionServiceTest {
 
     private final TransactionService service = new TransactionService(new DemoDataRepository());
+
+    @ParameterizedTest
+    @CsvSource({
+            "anna, 5 Belastungen, 1 Gutschrift",
+            "marco, 3 Belastungen, 1 Gutschrift"
+    })
+    void countsOnlyTransactionsOfEachTypeForCustomer(String username, String debits, String credits) {
+        List<Transaction> transactions = service.transactionsFor(username);
+        assertThat(service.transactionCountLabel(transactions, Transaction.Type.DEBIT)).isEqualTo(debits);
+        assertThat(service.transactionCountLabel(transactions, Transaction.Type.CREDIT)).isEqualTo(credits);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "DEBIT, 0, 0 Belastungen",
+            "DEBIT, 1, 1 Belastung",
+            "DEBIT, 2, 2 Belastungen",
+            "CREDIT, 0, 0 Gutschriften",
+            "CREDIT, 1, 1 Gutschrift",
+            "CREDIT, 2, 2 Gutschriften"
+    })
+    void countLabelsUseSingularOnlyForOne(Transaction.Type type, int count, String expected) {
+        Transaction transaction = new Transaction("test", LocalDate.of(2026, 10, 6), "Testhändler",
+                "Test", BigDecimal.ONE, "CHF", type);
+        List<Transaction> transactions = Collections.nCopies(count, transaction);
+        assertThat(service.transactionCountLabel(transactions, type)).isEqualTo(expected);
+
+        List<Transaction> mixedTransactions = new ArrayList<>(transactions);
+        mixedTransactions.add(new Transaction("other", transaction.date(), "Testhändler", "Test",
+                BigDecimal.ONE, "CHF", type == Transaction.Type.DEBIT
+                ? Transaction.Type.CREDIT : Transaction.Type.DEBIT));
+        assertThat(service.transactionCountLabel(mixedTransactions, type)).isEqualTo(expected);
+    }
 
     @Test
     void transactionsAreSortedNewestFirst() {

@@ -39,6 +39,16 @@ public class TransactionService {
                 .toList();
     }
 
+    /** Anzahl eines Buchungstyps mit deutscher Einzahl- bzw. Mehrzahlbeschriftung. */
+    public String transactionCountLabel(List<Transaction> transactions, Transaction.Type type) {
+        long count = transactions.stream().filter(tx -> tx.type() == type).count();
+        String label = switch (type) {
+            case DEBIT -> count == 1 ? "Belastung" : "Belastungen";
+            case CREDIT -> count == 1 ? "Gutschrift" : "Gutschriften";
+        };
+        return count + " " + label;
+    }
+
     /** Saldo aller Transaktionen (Gutschriften minus Belastungen). */
     public BigDecimal balance(List<Transaction> transactions) {
         return transactions.stream()

@@ -30,6 +30,14 @@
                  th:classappend="${balance.signum() < 0} ? 'debit' : 'credit'"
                  th:text="|${@money.format(balance)} CHF|">-0.00 CHF</div>
         </div>
+        <div data-testid="transaction-counts">
+            <div class="label">Buchungen</div>
+            <div class="value">
+                <span data-testid="count-debits" th:text="${debitCountLabel}">0 Belastungen</span>
+                ·
+                <span data-testid="count-credits" th:text="${creditCountLabel}">0 Gutschriften</span>
+            </div>
+        </div>
     </section>
 
     <section class="card">

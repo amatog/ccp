@@ -62,6 +62,10 @@ public class PortalController {
         model.addAttribute("customer", transactionService.customer(username));
         model.addAttribute("transactions", transactions);
         model.addAttribute("balance", transactionService.balance(allTransactions));
+        model.addAttribute("debitCountLabel",
+                transactionService.transactionCountLabel(allTransactions, Transaction.Type.DEBIT));
+        model.addAttribute("creditCountLabel",
+                transactionService.transactionCountLabel(allTransactions, Transaction.Type.CREDIT));
         return "transactions";
     }
 }
