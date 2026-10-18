@@ -1,0 +1,279 @@
+# Prozessschritt 3: Claude schreibt die Playwright-Tests für einen Codex-PR.
+#
+#   prepare   (JIRA)               Spezifikation + Auftrag bereitlegen        – kein PR-Code
+#   generate  (Anthropic-Schlüssel) Claude schreibt Tests, ohne Shell         – kein PR-Code
+#   verify    (keine Geheimnisse)  App + Suite aus dem PR-Stand ausführen    – PR-Code läuft hier
+#   fix       (Anthropic-Schlüssel) Korrekturrunde, nur bei Fehlschlägen      – kein PR-Code
+#   verify2   (keine Geheimnisse)  erneute Ausführung                        – PR-Code läuft hier
+#   publish   (GitHub, JIRA)       Commit auf PR-Branch, Kommentar, CI, Gemini – kein PR-Code
+#
+# Jeder Job läuft auf einem frischen Runner. PR-Code läuft nie in einem Job mit Geheimnissen.
+# Auslöser: automatisch am Ende von codex-implement.yml, oder manuell über «Run workflow».
+# Einrichtung: docs/CLAUDE-TESTS-SETUP.md
+name: Claude – Playwright-Tests schreiben
+
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'Nummer des Pull Requests, z. B. 4'
+        required: true
+      issue_key:
+        description: 'JIRA-Ticket, z. B. CCP-9 (leer = aus dem PR-Titel)'
+        required: false
+      start_review:
+        description: 'Danach Gemini-Review starten'
+        type: boolean
+        default: true
+
+concurrency:
+  group: claude-tests-${{ inputs.pr_number }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  PR_NUMBER: ${{ inputs.pr_number }}
+  RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+  REPO: ${{ github.repository }}
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      branch: ${{ steps.pr.outputs.branch }}
+      sha: ${{ steps.pr.outputs.sha }}
+      url: ${{ steps.pr.outputs.url }}
+      issue_key: ${{ steps.pr.outputs.issue_key }}
+    steps:
+      - name: Pull Request ermitteln
+        id: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_KEY_INPUT: ${{ inputs.issue_key }}
+        run: |
+          if [ "$GITHUB_REF" != "refs/heads/main" ]; then
+            echo "Nur von main aus startbar (gestartet von $GITHUB_REF)."; exit 1
+          fi
+          if ! [[ "$PR_NUMBER" =~ ^[0-9]+$ ]]; then echo "Ungültige PR-Nummer «$PR_NUMBER»"; exit 1; fi
+          gh api "repos/$REPO/pulls/$PR_NUMBER" > "$RUNNER_TEMP/pr.json"
+          [ "$(jq -r .state "$RUNNER_TEMP/pr.json")" = "open" ] || { echo "PR #$PR_NUMBER ist nicht offen."; exit 1; }
+          [ "$(jq -r .head.repo.full_name "$RUNNER_TEMP/pr.json")" = "$REPO" ] || { echo "PR stammt aus einem Fork – abgelehnt."; exit 1; }
+          title="$(jq -r .title "$RUNNER_TEMP/pr.json")"
+          key="${ISSUE_KEY_INPUT:-$(grep -oE 'CCP-[0-9]+' <<<"$title" | head -1 || true)}"
+          [[ "$key" =~ ^CCP-[0-9]+$ ]] || { echo "Kein JIRA-Ticket im PR-Titel «$title»."; exit 1; }
+          {
+            echo "branch=$(jq -r .head.ref "$RUNNER_TEMP/pr.json")"
+            echo "sha=$(jq -r .head.sha "$RUNNER_TEMP/pr.json")"
+            echo "url=$(jq -r .html_url "$RUNNER_TEMP/pr.json")"
+            echo "issue_key=$key"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Spezifikation und Auftrag bereitlegen
+        env:
+          ISSUE_KEY: ${{ steps.pr.outputs.issue_key }}
+          PR_URL: ${{ steps.pr.outputs.url }}
+          SPEC_OUT: ${{ runner.temp }}/task/spec.md
+          PROMPT_TEMPLATE: .github/claude/prompts/e2e-tests.md
+          PROMPT_OUT: ${{ runner.temp }}/task/task.md
+          FIX_TEMPLATE: .github/claude/prompts/e2e-tests-fix.md
+          FIX_OUT: ${{ runner.temp }}/task/task-fix.md
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/task"
+          node scripts/jira-codex.mjs tests-start
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: task
+          path: ${{ runner.temp }}/task
+          retention-days: 7
+
+  generate:
+    needs: prepare
+    uses: ./.github/workflows/claude-generate.yml
+    with:
+      sha: ${{ needs.prepare.outputs.sha }}
+      mode: new
+      task_artifact: task
+      tests_out: tests-1
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  verify:
+    needs: [prepare, generate]
+    uses: ./.github/workflows/e2e-verify.yml
+    with:
+      sha: ${{ needs.prepare.outputs.sha }}
+      tests_artifact: tests-1
+      results_artifact: results-1
+
+  fix:
+    needs: [prepare, generate, verify]
+    if: needs.verify.outputs.failed != '0' || needs.verify.outputs.compile_ok != 'true'
+    uses: ./.github/workflows/claude-generate.yml
+    with:
+      sha: ${{ needs.prepare.outputs.sha }}
+      mode: fix
+      task_artifact: task
+      tests_in: tests-1
+      results_in: results-1
+      tests_out: tests-2
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+  verify2:
+    needs: [prepare, fix]
+    uses: ./.github/workflows/e2e-verify.yml
+    with:
+      sha: ${{ needs.prepare.outputs.sha }}
+      tests_artifact: tests-2
+      results_artifact: results-2
+
+  publish:
+    needs: [prepare, generate, verify, fix, verify2]
+    if: always() && needs.prepare.result == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write        # Tests auf den PR-Branch pushen
+      pull-requests: write   # PR-Kommentar
+      issues: write          # PR-Kommentare laufen über die Issues-API
+      actions: write         # CI und Gemini-Review starten
+    env:
+      ISSUE_KEY: ${{ needs.prepare.outputs.issue_key }}
+      PR_URL: ${{ needs.prepare.outputs.url }}
+      BRANCH: ${{ needs.prepare.outputs.branch }}
+      # Endstand: Korrekturrunde, falls sie vollständig lief, sonst erste Runde
+      FINAL: ${{ needs.verify2.result == 'success' && '2' || '1' }}
+      FINAL_OK: ${{ needs.verify2.result == 'success' || (needs.generate.result == 'success' && needs.verify.result == 'success') }}
+      PASSED: ${{ needs.verify2.result == 'success' && needs.verify2.outputs.passed || needs.verify.outputs.passed }}
+      FAILED: ${{ needs.verify2.result == 'success' && needs.verify2.outputs.failed || needs.verify.outputs.failed }}
+      REASON: ${{ needs.generate.outputs.reason }}
+      COST_1: ${{ needs.generate.outputs.cost }}
+      COST_2: ${{ needs.fix.outputs.cost }}
+    steps:
+      # main: vertrauenswürdiges JIRA-Skript. Aus dem PR-Stand wird hier nichts ausgeführt.
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+          path: pr
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Ausgangslage prüfen
+        id: check
+        run: |
+          if [ "$FINAL_OK" != "true" ]; then
+            echo "reason=${REASON:-Erzeugen oder Ausführen der Tests ist fehlgeschlagen.}" >> "$GITHUB_OUTPUT"; exit 1
+          fi
+          echo "cost=$(awk -v a="${COST_1:-0}" -v b="${COST_2:-0}" 'BEGIN{printf "%.4f", a+b}')" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: tests-${{ env.FINAL }}
+          path: ${{ runner.temp }}/tests
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: results-${{ env.FINAL }}
+          path: ${{ runner.temp }}/results
+
+      - name: Tests übernehmen und prüfen
+        id: changes
+        working-directory: pr
+        run: |
+          rm -rf e2e/tests && cp -r "$RUNNER_TEMP/tests/tests" e2e/tests
+          git add -A
+          changed="$(git diff --cached --name-only)"
+          [ -n "$changed" ] || { echo "reason=Keine neuen oder geänderten Testdateien." >> "$GITHUB_OUTPUT"; exit 1; }
+          if echo "$changed" | grep -vE '^e2e/tests/[^/]+\.ts$'; then
+            echo "reason=Änderungen ausserhalb von e2e/tests/." >> "$GITHUB_OUTPUT"; exit 1
+          fi
+          { echo "files<<CHANGED_EOF"; echo "$changed"; echo "CHANGED_EOF"; } >> "$GITHUB_OUTPUT"
+
+      - name: Commit und Push auf den PR-Branch
+        working-directory: pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git config user.name "Claude (GitHub Actions)"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -q -m "$ISSUE_KEY Playwright-Tests (automatisch von Claude)" -m "Lauf: $RUN_URL"
+          git push -q "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" "HEAD:refs/heads/$BRANCH"
+
+      - name: Zusammenfassung am PR veröffentlichen
+        id: post
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          body="$RUNNER_TEMP/pr-comment.md"
+          if [ -s "$RUNNER_TEMP/tests/summary.md" ]; then cat "$RUNNER_TEMP/tests/summary.md" > "$body"
+          else echo "_Claude hat keine Zusammenfassung geliefert._" > "$body"; fi
+          printf '\n\n' >> "$body"
+          cat "$RUNNER_TEMP/results/results.md" >> "$body"
+          rounds=$([ "$FINAL" = "2" ] && echo "mit Korrekturrunde" || echo "ohne Korrekturrunde")
+          printf '\n---\nAusgeführt in einem getrennten Job ohne Geheimnisse (%s) · Lauf: %s\n\n🤖 Automatisch erstellt von Claude Code über GitHub Actions\n' \
+            "$rounds" "$RUN_URL" >> "$body"
+          url="$(gh api "repos/$REPO/issues/$PR_NUMBER/comments" -F body=@"$body" --jq .html_url)"
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      # Push mit dem GITHUB_TOKEN löst keine Workflows aus – CI ausdrücklich starten.
+      - name: CI für den PR-Branch starten
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run ci.yml --repo "$REPO" --ref "$BRANCH"
+
+      # Prozessschritt 5: Gemini prüft den PR inklusive der eben committeten Tests.
+      - name: Gemini-Review starten
+        id: review
+        if: inputs.start_review
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh workflow run gemini-review.yml --repo "$REPO" --ref main -f pr_number="$PR_NUMBER" -f issue_key="$ISSUE_KEY"
+          echo "started=true" >> "$GITHUB_OUTPUT"
+
+      - name: Ergebnis in JIRA melden
+        env:
+          COMMENT_URL: ${{ steps.post.outputs.url }}
+          TEST_FILES: ${{ steps.changes.outputs.files }}
+          COST_USD: ${{ steps.check.outputs.cost }}
+          REVIEW_STARTED: ${{ steps.review.outputs.started || 'false' }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: node scripts/jira-codex.mjs tests-done
+
+      - name: Fehlschlag in JIRA melden
+        if: failure()
+        env:
+          FAILURE_REASON: ${{ steps.check.outputs.reason || steps.changes.outputs.reason || '' }}
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+        run: |
+          if [ -f scripts/jira-codex.mjs ]; then node scripts/jira-codex.mjs tests-failed
+          else echo "JIRA-Skript nicht verfügbar – keine Meldung."; fi

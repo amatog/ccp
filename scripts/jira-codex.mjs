@@ -8,6 +8,9 @@
 //   node scripts/jira-codex.mjs spec          – Titel und neueste Spezifikation in SPEC_OUT schreiben (Gemini-Review)
 //   node scripts/jira-codex.mjs review        – Gemini-Empfehlung und PR-Kommentar-Link ins Ticket schreiben
 //   node scripts/jira-codex.mjs review-failed – Fehlschlag des Gemini-Reviews ins Ticket schreiben
+//   node scripts/jira-codex.mjs tests-start   – Spezifikation + Auftrag für Claude (Playwright) schreiben, Start melden
+//   node scripts/jira-codex.mjs tests-done    – Ergebnis der Playwright-Tests ins Ticket schreiben
+//   node scripts/jira-codex.mjs tests-failed  – Fehlschlag des Test-Workflows ins Ticket schreiben
 //
 // Umgebung: JIRA_BASE_URL, JIRA_EMAIL, JIRA_API_TOKEN, ISSUE_KEY, RUN_URL
 //   start:  PROMPT_TEMPLATE, PROMPT_OUT, GITHUB_OUTPUT (Branch-Name und Titel als Step-Outputs)
@@ -15,6 +18,9 @@
 //   failed: FAILURE_REASON (optional)
 //   spec:   SPEC_OUT
 //   review: PR_URL, REVIEW_URL, RECOMMENDATION
+//   tests-start: SPEC_OUT, PROMPT_TEMPLATE, PROMPT_OUT, FIX_TEMPLATE/FIX_OUT (optional), PR_URL, GITHUB_OUTPUT (feature)
+//   tests-done:  PR_URL, COMMENT_URL, TEST_FILES, PASSED, FAILED, COST_USD
+//   tests-failed: PR_URL, FAILURE_REASON (optional)
 // Mit DRY_RUN=1 und SPEC_FIXTURE=<json-Datei> läuft das Skript ohne JIRA (für lokale Tests).
 
 import { readFileSync, writeFileSync, appendFileSync } from 'node:fs';
@@ -42,7 +48,10 @@ switch (command) {
   case 'spec': await specForReview(); break;
   case 'review': await review(); break;
   case 'review-failed': await reviewFailed(); break;
-  default: fail(`Unbekannter Befehl «${command}» (start | done | failed | spec | review | review-failed).`);
+  case 'tests-start': await testsStart(); break;
+  case 'tests-done': await testsDone(); break;
+  case 'tests-failed': await testsFailed(); break;
+  default: fail(`Unbekannter Befehl «${command}» (start | done | failed | spec | review | review-failed | tests-start | tests-done | tests-failed).`);
 }
 
 // --- Befehle --------------------------------------------------------------------
@@ -139,6 +148,60 @@ async function reviewFailed() {
     `* Pull Request: [${env.PR_URL || '-'}|${env.PR_URL || '-'}]\n` +
     `* Details: [GitHub Actions|${env.RUN_URL || '-'}]\n\n` +
     `Neuer Versuch: in GitHub unter Actions → «Gemini – Pull Request reviewen» → Run workflow.`,
+  );
+}
+
+/** Spezifikation und Auftrag für die Playwright-Tests bereitlegen und den Start melden. */
+async function testsStart() {
+  const fixture = DRY_RUN ? JSON.parse(readFileSync(env.SPEC_FIXTURE, 'utf8')) : null;
+  const issue = fixture ?? await jira('GET', `/rest/api/2/issue/${ISSUE_KEY}?fields=summary,description`);
+  const spec = fixture
+    ? [...(fixture.fields.comment?.comments ?? [])].reverse().find(isSpec)
+    : await findNewestSpec();
+  if (!spec) fail('Keine Spezifikation im Ticket gefunden.');
+
+  const summary = issue.fields.summary.trim();
+  const feature = slug(summary);
+  writeFileSync(env.SPEC_OUT,
+    `# ${ISSUE_KEY}: ${summary}\n\n## Beschreibung\n\n${(issue.fields.description || '(keine Beschreibung)').trim()}\n\n` +
+    `## Spezifikation (massgebend)\n\n${spec.body.trim()}\n`);
+  const values = { ISSUE_KEY, SUMMARY: summary, FEATURE: feature };
+  const fill = (tpl) => readFileSync(tpl, 'utf8').replace(/\{\{(ISSUE_KEY|SUMMARY|FEATURE)\}\}/g, (_, k) => values[k]);
+  writeFileSync(env.PROMPT_OUT, fill(env.PROMPT_TEMPLATE));
+  if (env.FIX_TEMPLATE && env.FIX_OUT) writeFileSync(env.FIX_OUT, fill(env.FIX_TEMPLATE));
+  if (env.GITHUB_OUTPUT) appendFileSync(env.GITHUB_OUTPUT, `feature=${feature}\n`);
+
+  await comment(`*Claude schreibt Playwright-Tests* (Prozessschritt 7)\n* Pull Request: [${env.PR_URL}|${env.PR_URL}]\n* Lauf: [GitHub Actions|${env.RUN_URL || '-'}]`);
+  console.log(`Auftrag für ${ISSUE_KEY} erstellt (tests/${feature}.spec.ts)`);
+}
+
+async function testsDone() {
+  const files = (env.TEST_FILES || '').split('\n').map((f) => f.trim()).filter(Boolean);
+  const failed = Number(env.FAILED || 0);
+  const icon = failed === 0 ? '(/)' : '(x)';
+  const cost = env.COST_USD ? `\n* KI-Kosten (geschätzt): ${Number(env.COST_USD).toFixed(2)} USD` : '';
+  await comment(
+    `${icon} *Playwright-Tests von Claude auf den PR-Branch committet*\n` +
+    `* Dateien: ${files.length ? files.map((f) => `{{${f}}}`).join(', ') : '(keine)'}\n` +
+    `* Gesamte Suite gegen die lokal gestartete App: ${env.PASSED || 0} bestanden, ${failed} fehlgeschlagen\n` +
+    `* Zusammenfassung: [am Pull Request|${env.COMMENT_URL || env.PR_URL}]\n` +
+    `* Lauf: [GitHub Actions|${env.RUN_URL || '-'}]${cost}\n\n` +
+    (failed === 0
+      ? 'Nächste Schritte: CI und Gemini-Review laufen automatisch, danach Freigabe und Merge.'
+      : 'Mindestens ein Test schlägt fehl. Befunde im PR-Kommentar prüfen, bevor freigegeben wird.') +
+    (env.REVIEW_STARTED === 'true' ? '' : '\n\nDas Gemini-Review wurde nicht automatisch gestartet.'),
+  );
+}
+
+async function testsFailed() {
+  const reason = env.FAILURE_REASON || 'Der Workflow ist fehlgeschlagen.';
+  await comment(
+    `(x) *Automatische Playwright-Tests fehlgeschlagen*\n` +
+    `* Grund: ${reason}\n* Pull Request: [${env.PR_URL || '-'}|${env.PR_URL || '-'}]\n` +
+    `* Details: [GitHub Actions|${env.RUN_URL || '-'}]\n\n` +
+    `Es wurden keine Tests committet und kein Gemini-Review gestartet.\n` +
+    `Neuer Versuch: in GitHub unter Actions → «Claude – Playwright-Tests schreiben» → Run workflow ` +
+    `(Review danach unter «Gemini – Pull Request reviewen»).`,
   );
 }
 
