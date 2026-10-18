@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="de" xmlns:th="http://www.thymeleaf.org">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Transaktionen – Credit Card Portal</title>
-    <link rel="stylesheet" th:href="@{/css/portal.css}">
+    <link rel="stylesheet" th:href="@{/css/portal.css}" />
 </head>
 <body>
 <header>
@@ -34,7 +34,21 @@
 
     <section class="card">
         <h2>Transaktionen</h2>
-        <p data-testid="transactions-empty" th:if="${#lists.isEmpty(transactions)}">
+        <form method="get" th:action="@{/transactions}" data-testid="filter-form">
+            <label for="filter-from">Von</label>
+            <input id="filter-from" type="date" name="from" th:value="${from}" data-testid="filter-from" />
+            <label for="filter-to">Bis</label>
+            <input id="filter-to" type="date" name="to" th:value="${to}" data-testid="filter-to" />
+            <button type="submit" data-testid="filter-submit">Filtern</button>
+            <a th:if="${filterActive}" th:href="@{/transactions}" data-testid="filter-reset">Zurücksetzen</a>
+        </form>
+        <p th:if="${filterError != null}" th:text="${filterError}" data-testid="filter-error" role="alert"></p>
+        <p th:if="${filterValid and !#lists.isEmpty(transactions)}" data-testid="filter-summary"
+           th:text="|${#lists.size(transactions)} ${#lists.size(transactions) == 1 ? 'Transaktion' : 'Transaktionen'} im Zeitraum, Summe: ${@money.format(filterSum)} CHF|"></p>
+        <p th:if="${filterValid and #lists.isEmpty(transactions)}" data-testid="filter-no-results">
+            Keine Transaktionen im gewählten Zeitraum.
+        </p>
+        <p data-testid="transactions-empty" th:if="${!hasTransactions}">
             Keine Transaktionen vorhanden.
         </p>
         <div class="table-wrap" th:unless="${#lists.isEmpty(transactions)}">

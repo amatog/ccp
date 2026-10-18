@@ -1,6 +1,8 @@
 package ch.amato.ccp;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -15,6 +17,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.xpath;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -57,5 +60,81 @@ class PortalControllerTest {
     void healthEndpointIsPublic() throws Exception {
         mvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk());
+    }
+    @ParameterizedTest
+    @CsvSource({
+            "2026-10-04, 2026-10-09, 3, '3 Transaktionen im Zeitraum, Summe: -130.60 CHF'",
+            "2026-10-06, 2026-10-06, 1, '1 Transaktion im Zeitraum, Summe: 49.90 CHF'",
+            "2026-10-10, , 2, '2 Transaktionen im Zeitraum, Summe: -414.00 CHF'",
+            ", 2026-10-05, 2, '2 Transaktionen im Zeitraum, Summe: -146.35 CHF'"
+    })
+    @WithMockUser(username = "anna")
+    void validFilterShowsSummaryAndRetainsValues(String from, String to, int count, String summary) throws Exception {
+        mvc.perform(get("/transactions").param("from", from == null ? "" : from)
+                        .param("to", to == null ? "" : to))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(count))
+                .andExpect(xpath("//*[@data-testid='filter-summary']").string(summary))
+                .andExpect(xpath("//*[@data-testid='filter-from']/@value").string(from == null ? "" : from))
+                .andExpect(xpath("//*[@data-testid='filter-to']/@value").string(to == null ? "" : to))
+                .andExpect(xpath("//*[@data-testid='filter-form']/@method").string("get"))
+                .andExpect(xpath("//*[@data-testid='filter-form']/@action").string("/transactions"))
+                .andExpect(xpath("//*[@data-testid='filter-reset']/@href").string("/transactions"))
+                .andExpect(xpath("//*[@data-testid='filter-error']").doesNotExist());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "2026-10-10, 2026-10-05, Das Von-Datum darf nicht nach dem Bis-Datum liegen.",
+            "abc, , Ungültiges Datum. Bitte im Format TT.MM.JJJJ wählen.",
+            ", abc, Ungültiges Datum. Bitte im Format TT.MM.JJJJ wählen.",
+            "2026-02-30, , Ungültiges Datum. Bitte im Format TT.MM.JJJJ wählen."
+    })
+    @WithMockUser(username = "anna")
+    void invalidFilterShowsErrorAndAllTransactions(String from, String to, String error) throws Exception {
+        mvc.perform(get("/transactions").param("from", from == null ? "" : from)
+                        .param("to", to == null ? "" : to))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='filter-error']").string(error))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(6))
+                .andExpect(xpath("//*[@data-testid='filter-summary']").doesNotExist())
+                .andExpect(xpath("//*[@data-testid='filter-no-results']").doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
+    void emptyPeriodReplacesTableWithFilterMessage() throws Exception {
+        mvc.perform(get("/transactions").param("from", "2026-10-15").param("to", "2026-10-20"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='filter-no-results']")
+                        .string(org.hamcrest.Matchers.containsString("Keine Transaktionen im gewählten Zeitraum.")))
+                .andExpect(xpath("//*[@data-testid='transactions-table']").doesNotExist())
+                .andExpect(xpath("//*[@data-testid='transactions-empty']").doesNotExist())
+                .andExpect(xpath("//*[@data-testid='filter-summary']").doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
+    void resetShowsAllTransactionsWithoutActiveFilter() throws Exception {
+        mvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(6))
+                .andExpect(xpath("//*[@data-testid='filter-from']/@value").string(""))
+                .andExpect(xpath("//*[@data-testid='filter-to']/@value").string(""))
+                .andExpect(xpath("//*[@data-testid='filter-summary']").doesNotExist())
+                .andExpect(xpath("//*[@data-testid='filter-reset']").doesNotExist());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"2026-10-05, 2", "2026-10-31, 4"})
+    @WithMockUser(username = "marco")
+    void filteredViewPreservesTotalBalanceAndCustomerIsolation(String to, int count) throws Exception {
+        mvc.perform(get("/transactions").param("from", "2026-10-01").param("to", to)
+                        .param("username", "anna"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='balance-total']").string("-488.90 CHF"))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(count))
+                .andExpect(xpath("//*[@data-testid='transaction-row'][starts-with(@data-transaction-id, 'A-')]")
+                        .doesNotExist());
     }
 }
