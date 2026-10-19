@@ -16,6 +16,13 @@ public record Transaction(
         String currency,
         Type type) {
 
+    private static final BigDecimal HIGH_AMOUNT_THRESHOLD = new BigDecimal("500.00");
+
+    /** Ungewöhnlich hohe Belastung über dem festen CHF-Schwellenwert. */
+    public boolean isHighAmount() {
+        return type == Type.DEBIT && amount.compareTo(HIGH_AMOUNT_THRESHOLD) > 0;
+    }
+
     public enum Type {
         /** Belastung, z. B. ein Einkauf. */
         DEBIT,

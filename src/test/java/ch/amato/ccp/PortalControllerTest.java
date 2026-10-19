@@ -3,6 +3,7 @@ package ch.amato.ccp;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -12,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
@@ -25,6 +27,84 @@ class PortalControllerTest {
 
     @Autowired
     MockMvc mvc;
+
+    @ParameterizedTest
+    @CsvSource({
+            "L-3001, 0",
+            "L-3002, 1",
+            "L-3003, 0",
+            "L-3004, 1",
+            "L-3005, 0"
+    })
+    @WithMockUser(username = "lena")
+    void lenaSeesWarningsOnlyInsideHighDebitAmountCells(String id, int count) throws Exception {
+        String warning = "//*[@data-transaction-id='" + id
+                + "']/td[@data-testid='tx-amount']/span[@data-testid='high-amount-warning']";
+        mvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='high-amount-warning']").nodeCount(2))
+                .andExpect(xpath(warning).nodeCount(count));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"L-3002", "L-3004"})
+    @WithMockUser(username = "lena")
+    void warningsHaveSymbolTooltipAndAccessibleName(String id) throws Exception {
+        String warning = "//*[@data-transaction-id='" + id + "']//span[@data-testid='high-amount-warning']";
+        mvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(xpath(warning).string("⚠"))
+                .andExpect(xpath(warning + "/@title").string("Hoher Betrag – bitte prüfen"))
+                .andExpect(xpath(warning + "/@aria-label").string("Hoher Betrag – bitte prüfen"))
+                .andExpect(xpath(warning + "/@role").string("img"))
+                .andExpect(xpath(warning + "/@class").string("high-amount-warning"));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"anna", "marco"})
+    void existingCustomersSeeNoWarnings(String username) throws Exception {
+        mvc.perform(get("/transactions").with(user(username)).param("username", "lena"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='high-amount-warning']").doesNotExist())
+                .andExpect(xpath("//*[@data-transaction-id and starts-with(@data-transaction-id, 'L-')]")
+                        .doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(username = "lena")
+    void lenaDateFilterRetainsOnlyMatchingWarning() throws Exception {
+        mvc.perform(get("/transactions").param("from", "2026-10-05").param("to", "2026-10-10"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(2))
+                .andExpect(xpath("//*[@data-transaction-id='L-3002']").nodeCount(1))
+                .andExpect(xpath("//*[@data-transaction-id='L-3003']").nodeCount(1))
+                .andExpect(xpath("//*[@data-testid='high-amount-warning']").nodeCount(1))
+                .andExpect(xpath("//*[@data-transaction-id='L-3002']/td[@data-testid='tx-amount']"
+                        + "/span[@data-testid='high-amount-warning']").nodeCount(1));
+    }
+
+    @Test
+    @WithMockUser(username = "lena")
+    void lenaSummaryAndFormattedAmountsMatchDemoData() throws Exception {
+        mvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(5))
+                .andExpect(xpath("//*[@data-testid='customer-name']").string("Lena Probst"))
+                .andExpect(xpath("//*[@data-testid='card-number']").string("**** **** **** 7070"))
+                .andExpect(xpath("//*[@data-testid='balance-total']").string("-1'462.45 CHF"))
+                .andExpect(xpath("//*[@data-testid='count-debits']").string("4 Belastungen"))
+                .andExpect(xpath("//*[@data-testid='count-credits']").string("1 Gutschrift"))
+                .andExpect(xpath("//*[@data-transaction-id='L-3002']/td[@data-testid='tx-amount']")
+                        .string(containsString("-500.05 CHF")))
+                .andExpect(xpath("//*[@data-transaction-id='L-3004']/td[@data-testid='tx-amount']")
+                        .string(containsString("-1'200.00 CHF")));
+    }
+
+    @Test
+    void lenaCanLogInWithDemoPassword() throws Exception {
+        mvc.perform(formLogin("/login").user("lena").password("demo1234"))
+                .andExpect(redirectedUrl("/transactions"));
+    }
 
     @Test
     @WithMockUser(username = "anna")

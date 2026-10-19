@@ -81,8 +81,12 @@
                               th:text="${tx.category}">Kategorie</span>
                     </td>
                     <td data-testid="tx-amount" class="amount"
-                        th:classappend="${tx.type.name() == 'DEBIT'} ? 'debit' : 'credit'"
-                        th:text="|${@money.format(tx.signedAmount())} ${tx.currency}|">0.00 CHF</td>
+                        th:classappend="${tx.type.name() == 'DEBIT'} ? 'debit' : 'credit'">
+                        <span th:if="${tx.isHighAmount()}" data-testid="high-amount-warning"
+                              class="high-amount-warning" role="img"
+                              title="Hoher Betrag – bitte prüfen" aria-label="Hoher Betrag – bitte prüfen">⚠</span>
+                        <span th:text="|${@money.format(tx.signedAmount())} ${tx.currency}|">0.00 CHF</span>
+                    </td>
                 </tr>
                 </tbody>
             </table>

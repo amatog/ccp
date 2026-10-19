@@ -19,7 +19,8 @@ public class DemoDataRepository {
 
     private final Map<String, Customer> customers = Map.of(
             "anna", new Customer("anna", "Anna Muster", "**** **** **** 4242"),
-            "marco", new Customer("marco", "Marco Beispiel", "**** **** **** 1881"));
+            "marco", new Customer("marco", "Marco Beispiel", "**** **** **** 1881"),
+            "lena", new Customer("lena", "Lena Probst", "**** **** **** 7070"));
 
     private final Map<String, List<Transaction>> transactions = Map.of(
             "anna", List.of(
@@ -33,7 +34,13 @@ public class DemoDataRepository {
                     tx("M-2001", "2026-10-01", "Coop Bern", "Lebensmittel", "56.20", Type.DEBIT),
                     tx("M-2002", "2026-10-05", "Hotel Alpenblick", "Reisen", "420.00", Type.DEBIT),
                     tx("M-2003", "2026-10-08", "Hotel Alpenblick Gutschrift", "Reisen", "80.00", Type.CREDIT),
-                    tx("M-2004", "2026-10-11", "Tankstelle Aare", "Mobilität", "92.70", Type.DEBIT)));
+                    tx("M-2004", "2026-10-11", "Tankstelle Aare", "Mobilität", "92.70", Type.DEBIT)),
+            "lena", List.of(
+                    tx("L-3001", "2026-10-03", "Möbelhaus Limmat", "Shopping", "500.00", Type.DEBIT),
+                    tx("L-3002", "2026-10-07", "Reisebüro Horizont", "Reisen", "500.05", Type.DEBIT),
+                    tx("L-3003", "2026-10-10", "Reisebüro Horizont Gutschrift", "Reisen", "750.00", Type.CREDIT),
+                    tx("L-3004", "2026-10-13", "Elektro Zentrum Baden", "Elektronik", "1200.00", Type.DEBIT),
+                    tx("L-3005", "2026-10-15", "Bäckerei Sonnenhof", "Lebensmittel", "12.40", Type.DEBIT)));
 
     public Optional<Customer> findCustomer(String username) {
         return Optional.ofNullable(customers.get(username));
