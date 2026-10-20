@@ -30,6 +30,90 @@ class PortalControllerTest {
 
     @ParameterizedTest
     @CsvSource({
+            "anna, Elektronik, , , 7, '7 Transaktionen in der Kategorie Elektronik, Summe: -1’650.02 CHF'",
+            "anna, Zahlung, , , 11, '11 Transaktionen in der Kategorie Zahlung, Summe: 8’904.51 CHF'",
+            "marco, Mobilität, , , 30, '30 Transaktionen in der Kategorie Mobilität, Summe: -1’940.36 CHF'",
+            "marco, Reisen, 2026-10-01, 2026-10-31, 2, '2 Transaktionen in der Kategorie Reisen, Summe: -340.00 CHF'",
+            "anna, Elektronik, 2026-10-12, 2026-10-12, 1, '1 Transaktion in der Kategorie Elektronik, Summe: -349.00 CHF'"
+    })
+    void categoryFilterRendersSummaryAndRetainsSelection(String username, String category, String from,
+                                                        String to, int count, String summary) throws Exception {
+        mvc.perform(get("/transactions").with(user(username)).param("category", category)
+                        .param("from", from == null ? "" : from).param("to", to == null ? "" : to))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(count))
+                .andExpect(xpath("//*[@data-testid='filter-summary']").string(summary.replace('’', '\'')))
+                .andExpect(xpath("//*[@data-testid='filter-category']/option[@selected]/@value").string(category))
+                .andExpect(xpath("//*[@data-testid='filter-from']/@value").string(from == null ? "" : from))
+                .andExpect(xpath("//*[@data-testid='filter-to']/@value").string(to == null ? "" : to))
+                .andExpect(xpath("//*[@data-testid='filter-reset']/@href").string("/transactions"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "Haustiere, 2026-10-01, 2026-10-31, Unbekannte Kategorie.",
+            "elektronik, , , Unbekannte Kategorie.",
+            "Elektronik, 2026-10-10, 2026-10-05, Das Von-Datum darf nicht nach dem Bis-Datum liegen.",
+            "Elektronik, abc, , Ungültiges Datum. Bitte im Format TT.MM.JJJJ wählen."
+    })
+    @WithMockUser(username = "anna")
+    void anyFilterErrorDisablesAllFiltering(String category, String from, String to, String error) throws Exception {
+        mvc.perform(get("/transactions").param("category", category)
+                        .param("from", from == null ? "" : from).param("to", to == null ? "" : to))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='filter-error']").string(error))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(155))
+                .andExpect(xpath("//*[@data-testid='filter-summary']").doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
+    void emptyCategoryPeriodShowsCategoryMessage() throws Exception {
+        mvc.perform(get("/transactions").param("category", "Elektronik")
+                        .param("from", "2026-10-01").param("to", "2026-10-10"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='filter-no-results']").string("Keine Transaktionen gefunden."))
+                .andExpect(xpath("//*[@data-testid='transactions-table']").doesNotExist())
+                .andExpect(xpath("//*[@data-testid='filter-summary']").doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(username = "marco")
+    void categoryFilterPreservesAccountTotalsAndCustomerIsolation() throws Exception {
+        mvc.perform(get("/transactions").param("category", "Elektronik").param("username", "anna"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(3))
+                .andExpect(xpath("//*[@data-testid='transaction-row'][not(starts-with(@data-transaction-id, 'M-'))]")
+                        .doesNotExist())
+                .andExpect(xpath("//*[@data-testid='balance-total']").string("-1'040.68 CHF"))
+                .andExpect(xpath("//*[@data-testid='count-debits']").string("130 Belastungen"))
+                .andExpect(xpath("//*[@data-testid='count-credits']").string("16 Gutschriften"));
+    }
+
+    @Test
+    @WithMockUser(username = "marco")
+    void defaultCategoryOffersAllOptionsAndResetsMarcoAccount() throws Exception {
+        String options = "//*[@data-testid='filter-category']/option";
+        mvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(xpath(options).nodeCount(9))
+                .andExpect(xpath(options + "[1][@selected]/@value").string(""))
+                .andExpect(xpath(options + "[1]").string("Alle Kategorien"))
+                .andExpect(xpath("//*[@data-testid='filter-category']/@name").string("category"))
+                .andExpect(xpath("//label[@for='filter-category']").string("Kategorie"))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(146))
+                .andExpect(xpath("//*[@data-testid='filter-summary']").doesNotExist())
+                .andExpect(xpath("//*[@data-testid='filter-reset']").doesNotExist());
+        String[] categories = {"Elektronik", "Gastronomie", "Lebensmittel", "Mobilität",
+                "Reisen", "Shopping", "Telekom", "Zahlung"};
+        for (int i = 0; i < categories.length; i++) {
+            mvc.perform(get("/transactions"))
+                    .andExpect(xpath(options + "[" + (i + 2) + "]/@value").string(categories[i]));
+        }
+    }
+
+    @ParameterizedTest
+    @CsvSource({
             "L-3001, 0",
             "L-3002, 1",
             "L-3003, 0",
