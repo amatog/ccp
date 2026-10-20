@@ -66,11 +66,12 @@ test.describe('CCP-6 Transaktionen nach Zeitraum filtern', () => {
 
   test('AK-4: Nur Bis-Datum', async ({ page }) => {
     await loginAndOpenTransactions(page, 'anna');
-    await filter(page, '', '2026-10-05');
+    // Die Historie beginnt am 20.10.2025; bis 26.10.2025 gibt es genau zwei Buchungen.
+    await filter(page, '', '2025-10-26');
 
-    await expectTransactionIds(page, ['A-1002', 'A-1001']);
+    await expectTransactionIds(page, ['A-0002', 'A-0001']);
     await expect(page.getByTestId('filter-summary'))
-      .toHaveText('2 Transaktionen im Zeitraum, Summe: -146.35 CHF');
+      .toHaveText('2 Transaktionen im Zeitraum, Summe: -44.54 CHF');
   });
 
   test('AK-5: Zeitraum ohne Treffer', async ({ page }) => {

@@ -233,7 +233,7 @@ class PortalControllerTest {
             "2026-10-04, 2026-10-09, 3, '3 Transaktionen im Zeitraum, Summe: -130.60 CHF'",
             "2026-10-06, 2026-10-06, 1, '1 Transaktion im Zeitraum, Summe: 49.90 CHF'",
             "2026-10-10, , 2, '2 Transaktionen im Zeitraum, Summe: -414.00 CHF'",
-            ", 2026-10-05, 2, '2 Transaktionen im Zeitraum, Summe: -146.35 CHF'"
+            ", 2025-10-26, 2, '2 Transaktionen im Zeitraum, Summe: -44.54 CHF'"
     })
     @WithMockUser(username = "anna")
     void validFilterShowsSummaryAndRetainsValues(String from, String to, int count, String summary) throws Exception {
