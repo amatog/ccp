@@ -21,7 +21,20 @@ async function expectTransactionIds(page: Page, ids: string[]) {
   }
 }
 
-const ALLE_ANNA = ['A-1006', 'A-1005', 'A-1004', 'A-1003', 'A-1002', 'A-1001'];
+/** Anna hat 155 Transaktionen (20.10.2025 bis heute); die neuesten sind die Oktober-Buchungen. */
+const ANNA_ANZAHL = 155;
+const ANNA_NEUESTE = ['A-1006', 'A-1005', 'A-1004', 'A-1003', 'A-1002', 'A-1001'];
+const ANNA_AELTESTE = 'A-0001';
+
+/** Prüft, dass alle Transaktionen von Anna ungefiltert angezeigt werden, neueste zuerst. */
+async function expectAlleAnna(page: Page) {
+  const rows = page.getByTestId('transaction-row');
+  await expect(rows).toHaveCount(ANNA_ANZAHL);
+  for (const [i, id] of ANNA_NEUESTE.entries()) {
+    await expect(rows.nth(i)).toHaveAttribute('data-transaction-id', id);
+  }
+  await expect(rows.last()).toHaveAttribute('data-transaction-id', ANNA_AELTESTE);
+}
 
 test.describe('CCP-6 Transaktionen nach Zeitraum filtern', () => {
   test('AK-1: Zeitraum mit Von und Bis', async ({ page }) => {
@@ -53,11 +66,12 @@ test.describe('CCP-6 Transaktionen nach Zeitraum filtern', () => {
 
   test('AK-4: Nur Bis-Datum', async ({ page }) => {
     await loginAndOpenTransactions(page, 'anna');
-    await filter(page, '', '2026-10-05');
+    // Die Historie beginnt am 20.10.2025; bis 26.10.2025 gibt es genau zwei Buchungen.
+    await filter(page, '', '2025-10-26');
 
-    await expectTransactionIds(page, ['A-1002', 'A-1001']);
+    await expectTransactionIds(page, ['A-0002', 'A-0001']);
     await expect(page.getByTestId('filter-summary'))
-      .toHaveText('2 Transaktionen im Zeitraum, Summe: -146.35 CHF');
+      .toHaveText('2 Transaktionen im Zeitraum, Summe: -44.54 CHF');
   });
 
   test('AK-5: Zeitraum ohne Treffer', async ({ page }) => {
@@ -77,7 +91,7 @@ test.describe('CCP-6 Transaktionen nach Zeitraum filtern', () => {
 
     await expect(page.getByTestId('filter-error'))
       .toHaveText('Das Von-Datum darf nicht nach dem Bis-Datum liegen.');
-    await expectTransactionIds(page, ALLE_ANNA);
+    await expectAlleAnna(page);
     await expect(page.getByTestId('filter-summary')).toHaveCount(0);
   });
 
@@ -89,7 +103,7 @@ test.describe('CCP-6 Transaktionen nach Zeitraum filtern', () => {
     expect(response?.status()).toBe(200);
     await expect(page.getByTestId('filter-error'))
       .toHaveText('Ungültiges Datum. Bitte im Format TT.MM.JJJJ wählen.');
-    await expectTransactionIds(page, ALLE_ANNA);
+    await expectAlleAnna(page);
   });
 
   test('AK-8: Filter bleibt sichtbar und lässt sich zurücksetzen', async ({ page }) => {
@@ -104,7 +118,7 @@ test.describe('CCP-6 Transaktionen nach Zeitraum filtern', () => {
     await expect(page).toHaveURL(/\/transactions$/);
     await expect(page.getByTestId('filter-from')).toHaveValue('');
     await expect(page.getByTestId('filter-to')).toHaveValue('');
-    await expectTransactionIds(page, ALLE_ANNA);
+    await expectAlleAnna(page);
     await expect(page.getByTestId('filter-summary')).toHaveCount(0);
   });
 
@@ -113,7 +127,7 @@ test.describe('CCP-6 Transaktionen nach Zeitraum filtern', () => {
     await filter(page, '2026-10-01', '2026-10-05');
 
     await expectTransactionIds(page, ['M-2002', 'M-2001']);
-    await expect(page.getByTestId('balance-total')).toHaveText('-488.90 CHF');
+    await expect(page.getByTestId('balance-total')).toHaveText("-1'040.68 CHF");
   });
 
   test('AK-10: Datenschutz bleibt gewahrt', async ({ page }) => {

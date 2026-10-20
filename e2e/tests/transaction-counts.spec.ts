@@ -9,15 +9,15 @@ test.describe('CCP-9 Anzahl Belastungen und Gutschriften', () => {
   test('AK-1: Anzahl für Anna', async ({ page }) => {
     await loginAndOpenTransactions(page, 'anna');
 
-    await expect(page.getByTestId('count-debits')).toHaveText('5 Belastungen');
-    await expect(page.getByTestId('count-credits')).toHaveText('1 Gutschrift');
+    await expect(page.getByTestId('count-debits')).toHaveText('142 Belastungen');
+    await expect(page.getByTestId('count-credits')).toHaveText('13 Gutschriften');
   });
 
   test('AK-2: Anzahl für Marco', async ({ page }) => {
     await loginAndOpenTransactions(page, 'marco');
 
-    await expect(page.getByTestId('count-debits')).toHaveText('3 Belastungen');
-    await expect(page.getByTestId('count-credits')).toHaveText('1 Gutschrift');
+    await expect(page.getByTestId('count-debits')).toHaveText('130 Belastungen');
+    await expect(page.getByTestId('count-credits')).toHaveText('16 Gutschriften');
   });
 
   test('AK-3: Zeitraumfilter ändert die Anzahl nicht', async ({ page }) => {
@@ -30,8 +30,8 @@ test.describe('CCP-9 Anzahl Belastungen und Gutschriften', () => {
     // Der Filter greift (nur A-1003) …
     await expect(page.getByTestId('transaction-row')).toHaveCount(1);
     // … die Anzahl im Kopfbereich bezieht sich weiterhin auf das ganze Konto.
-    await expect(page.getByTestId('count-debits')).toHaveText('5 Belastungen');
-    await expect(page.getByTestId('count-credits')).toHaveText('1 Gutschrift');
+    await expect(page.getByTestId('count-debits')).toHaveText('142 Belastungen');
+    await expect(page.getByTestId('count-credits')).toHaveText('13 Gutschriften');
   });
 
   test('AK-4: Anzeige im Kopfbereich', async ({ page }) => {
@@ -41,6 +41,6 @@ test.describe('CCP-9 Anzahl Belastungen und Gutschriften', () => {
     await expect(summary.getByTestId('transaction-counts')).toBeVisible();
     await expect(summary.getByTestId('count-debits')).toBeVisible();
     await expect(summary.getByTestId('count-credits')).toBeVisible();
-    await expect(summary.getByTestId('balance-total')).toHaveText('-628.95 CHF');
+    await expect(summary.getByTestId('balance-total')).toHaveText("-1'382.07 CHF");
   });
 });

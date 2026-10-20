@@ -22,8 +22,9 @@ class TransactionServiceTest {
 
     @ParameterizedTest
     @CsvSource({
-            "anna, 5 Belastungen, 1 Gutschrift",
-            "marco, 3 Belastungen, 1 Gutschrift"
+            "anna, 142 Belastungen, 13 Gutschriften",
+            "marco, 130 Belastungen, 16 Gutschriften",
+            "lena, 146 Belastungen, 16 Gutschriften"
     })
     void countsOnlyTransactionsOfEachTypeForCustomer(String username, String debits, String credits) {
         List<Transaction> transactions = service.transactionsFor(username);
@@ -64,9 +65,11 @@ class TransactionServiceTest {
 
     @Test
     void balanceSubtractsDebitsAndAddsCredits() {
-        // Marco: -56.20 -420.00 +80.00 -92.70 = -488.90
-        BigDecimal balance = service.balance(service.transactionsFor("marco"));
-        assertThat(balance).isEqualByComparingTo("-488.90");
+        // Marco Oktober 2026: -56.20 -420.00 +80.00 -92.70 = -488.90
+        BigDecimal october = service.balance(service.transactionsFor("marco",
+                LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31)));
+        assertThat(october).isEqualByComparingTo("-488.90");
+        assertThat(service.balance(service.transactionsFor("marco"))).isEqualByComparingTo("-1040.68");
     }
 
     @Test
@@ -78,10 +81,11 @@ class TransactionServiceTest {
             "anna, 2026-10-04, 2026-10-09, A-1004 A-1003 A-1002, -130.60",
             "anna, 2026-10-06, 2026-10-06, A-1003, 49.90",
             "anna, 2026-10-10, , A-1006 A-1005, -414.00",
-            "anna, , 2026-10-05, A-1002 A-1001, -146.35",
+            "anna, , 2025-10-26, A-0002 A-0001, -44.54",
+            "anna, 2026-10-01, 2026-10-05, A-1002 A-1001, -146.35",
             "marco, 2026-10-01, 2026-10-05, M-2002 M-2001, -476.20",
             "marco, 2026-10-01, 2026-10-31, M-2004 M-2003 M-2002 M-2001, -488.90",
-            "anna, , , A-1006 A-1005 A-1004 A-1003 A-1002 A-1001, -628.95"
+            "anna, 2026-10-01, , A-1006 A-1005 A-1004 A-1003 A-1002 A-1001, -628.95"
     })
     void filtersInclusiveDatesInDescendingOrderForCustomer(String username, String from, String to,
                                                           String ids, String sum) {
@@ -95,5 +99,34 @@ class TransactionServiceTest {
     void periodWithoutMatchesIsEmpty() {
         assertThat(service.transactionsFor("anna", LocalDate.of(2026, 10, 15),
                 LocalDate.of(2026, 10, 20))).isEmpty();
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "anna, 155, A-1006, A-0001, -1382.07",
+            "marco, 146, M-2004, M-0001, -1040.68",
+            "lena, 162, L-3005, L-0001, -2595.70"
+    })
+    void demoDataCoversOneYearFromOctober2025(String username, int count, String newest, String oldest,
+                                              String balance) {
+        List<Transaction> txs = service.transactionsFor(username);
+        assertThat(txs).hasSize(count);
+        assertThat(txs.get(0).id()).isEqualTo(newest);
+        assertThat(txs.get(txs.size() - 1).id()).isEqualTo(oldest);
+        assertThat(txs).allSatisfy(tx -> assertThat(tx.date())
+                .isBetween(LocalDate.of(2025, 10, 20), LocalDate.of(2026, 10, 20)));
+        // Jeder Monat von Oktober 2025 bis Oktober 2026 enthält Buchungen.
+        assertThat(txs.stream().map(tx -> tx.date().withDayOfMonth(1)).distinct()).hasSize(13);
+        assertThat(service.balance(txs)).isEqualByComparingTo(balance);
+    }
+
+    @Test
+    void historicalDebitsStayBelowHighAmountThreshold() {
+        // Nur die bekannten Oktober-Fälle von Lena (L-3002, L-3004) gelten als hohe Belastung.
+        assertThat(List.of("anna", "marco", "lena").stream()
+                .flatMap(user -> service.transactionsFor(user).stream())
+                .filter(Transaction::isHighAmount)
+                .map(Transaction::id))
+                .containsExactlyInAnyOrder("L-3002", "L-3004");
     }
 }
