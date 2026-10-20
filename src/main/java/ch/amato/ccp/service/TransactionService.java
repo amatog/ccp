@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -37,6 +38,21 @@ public class TransactionService {
                 .filter(tx -> to == null || !tx.date().isAfter(to))
                 .sorted(Comparator.comparing(Transaction::date).reversed())
                 .toList();
+    }
+
+    /** Beschriftung der optionalen Grenzen eines gültigen Zeitraumfilters. */
+    public String summaryPeriod(LocalDate from, LocalDate to) {
+        DateTimeFormatter format = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+        if (from == null && to == null) {
+            return "Gesamtes Konto";
+        }
+        if (from == null) {
+            return "bis " + to.format(format);
+        }
+        if (to == null) {
+            return "ab " + from.format(format);
+        }
+        return from.format(format) + " – " + to.format(format);
     }
 
     /** Anzahl eines Buchungstyps mit deutscher Einzahl- bzw. Mehrzahlbeschriftung. */

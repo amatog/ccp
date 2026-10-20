@@ -40,6 +40,7 @@ public class PortalController {
         List<Transaction> transactions = allTransactions;
         boolean filterActive = !from.isEmpty() || !to.isEmpty();
         String filterError = null;
+        String summaryPeriod = transactionService.summaryPeriod(null, null);
         try {
             LocalDate fromDate = from.isEmpty() ? null : LocalDate.parse(from);
             LocalDate toDate = to.isEmpty() ? null : LocalDate.parse(to);
@@ -47,11 +48,13 @@ public class PortalController {
                 filterError = "Das Von-Datum darf nicht nach dem Bis-Datum liegen.";
             } else if (filterActive) {
                 transactions = transactionService.transactionsFor(username, fromDate, toDate);
+                summaryPeriod = transactionService.summaryPeriod(fromDate, toDate);
             }
         } catch (DateTimeParseException exception) {
             filterError = "Ungültiges Datum. Bitte im Format TT.MM.JJJJ wählen.";
         }
 
+        model.addAttribute("summaryPeriod", summaryPeriod);
         model.addAttribute("from", from);
         model.addAttribute("to", to);
         model.addAttribute("filterActive", filterActive);
@@ -61,11 +64,11 @@ public class PortalController {
         model.addAttribute("hasTransactions", !allTransactions.isEmpty());
         model.addAttribute("customer", transactionService.customer(username));
         model.addAttribute("transactions", transactions);
-        model.addAttribute("balance", transactionService.balance(allTransactions));
+        model.addAttribute("balance", transactionService.balance(transactions));
         model.addAttribute("debitCountLabel",
-                transactionService.transactionCountLabel(allTransactions, Transaction.Type.DEBIT));
+                transactionService.transactionCountLabel(transactions, Transaction.Type.DEBIT));
         model.addAttribute("creditCountLabel",
-                transactionService.transactionCountLabel(allTransactions, Transaction.Type.CREDIT));
+                transactionService.transactionCountLabel(transactions, Transaction.Type.CREDIT));
         return "transactions";
     }
 }

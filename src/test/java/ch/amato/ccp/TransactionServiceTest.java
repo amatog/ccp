@@ -22,6 +22,18 @@ class TransactionServiceTest {
 
     @ParameterizedTest
     @CsvSource({
+            ", , Gesamtes Konto",
+            "2026-10-01, 2026-10-05, 01.10.2026 – 05.10.2026",
+            "2026-10-01, , ab 01.10.2026",
+            ", 2025-10-31, bis 31.10.2025"
+    })
+    void summaryPeriodFormatsOptionalDateBounds(String from, String to, String expected) {
+        assertThat(service.summaryPeriod(from == null ? null : LocalDate.parse(from),
+                to == null ? null : LocalDate.parse(to))).isEqualTo(expected);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
             "anna, 142 Belastungen, 13 Gutschriften",
             "marco, 130 Belastungen, 16 Gutschriften",
             "lena, 146 Belastungen, 16 Gutschriften"

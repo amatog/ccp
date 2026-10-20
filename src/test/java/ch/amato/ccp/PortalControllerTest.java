@@ -30,6 +30,58 @@ class PortalControllerTest {
 
     @ParameterizedTest
     @CsvSource({
+            "marco, , , -1'040.68 CHF, 130 Belastungen, 16 Gutschriften, Gesamtes Konto, 146",
+            "marco, 2026-10-01, 2026-10-05, -476.20 CHF, 2 Belastungen, 0 Gutschriften, 01.10.2026 – 05.10.2026, 2",
+            "anna, 2026-10-06, 2026-10-06, 49.90 CHF, 0 Belastungen, 1 Gutschrift, 06.10.2026 – 06.10.2026, 1",
+            "lena, 2026-10-05, 2026-10-10, 249.95 CHF, 1 Belastung, 1 Gutschrift, 05.10.2026 – 10.10.2026, 2",
+            "marco, 2026-10-01, , -488.90 CHF, 3 Belastungen, 1 Gutschrift, ab 01.10.2026, 4",
+            "anna, , 2025-10-31, -97.77 CHF, 4 Belastungen, 0 Gutschriften, bis 31.10.2025, 4",
+            "anna, 2026-10-15, 2026-10-20, 0.00 CHF, 0 Belastungen, 0 Gutschriften, 15.10.2026 – 20.10.2026, 0",
+            "marco, 2026-10-10, 2026-10-01, -1'040.68 CHF, 130 Belastungen, 16 Gutschriften, Gesamtes Konto, 146",
+            "marco, abc, , -1'040.68 CHF, 130 Belastungen, 16 Gutschriften, Gesamtes Konto, 146",
+            "marco, , 2026-02-30, -1'040.68 CHF, 130 Belastungen, 16 Gutschriften, Gesamtes Konto, 146",
+            "lena, 2026-01-01, 2026-06-30, -641.14 CHF, 75 Belastungen, 8 Gutschriften, 01.01.2026 – 30.06.2026, 83",
+            "anna, 2026-10-01, 2026-10-31, -628.95 CHF, 5 Belastungen, 1 Gutschrift, 01.10.2026 – 31.10.2026, 6",
+            "marco, 2026-10-01, 2026-10-31, -488.90 CHF, 3 Belastungen, 1 Gutschrift, 01.10.2026 – 31.10.2026, 4"
+    })
+    void accountSummaryMatchesDisplayedPeriod(String username, String from, String to, String balance,
+                                              String debits, String credits, String period, int rows) throws Exception {
+        mvc.perform(get("/transactions").with(user(username)).param("username", "other")
+                        .param("from", from == null ? "" : from).param("to", to == null ? "" : to))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='balance-total']").string(balance))
+                .andExpect(xpath("//*[@data-testid='count-debits']").string(debits))
+                .andExpect(xpath("//*[@data-testid='count-credits']").string(credits))
+                .andExpect(xpath("//*[@data-testid='account-summary']//*[@data-testid='summary-period']")
+                        .string(period))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(rows));
+    }
+
+    @Test
+    @WithMockUser(username = "marco")
+    void resetRestoresWholeAccountSummary() throws Exception {
+        mvc.perform(get("/transactions").param("from", "2026-10-01").param("to", "2026-10-05"))
+                .andExpect(xpath("//*[@data-testid='filter-reset']/@href").string("/transactions"));
+        mvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='balance-total']").string("-1'040.68 CHF"))
+                .andExpect(xpath("//*[@data-testid='count-debits']").string("130 Belastungen"))
+                .andExpect(xpath("//*[@data-testid='count-credits']").string("16 Gutschriften"))
+                .andExpect(xpath("//*[@data-testid='summary-period']").string("Gesamtes Konto"));
+    }
+
+    @Test
+    @WithMockUser(username = "lena")
+    void accountBalanceMatchesFilterSummary() throws Exception {
+        mvc.perform(get("/transactions").param("from", "2026-01-01").param("to", "2026-06-30"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='balance-total']").string("-641.14 CHF"))
+                .andExpect(xpath("//*[@data-testid='filter-summary']")
+                        .string("83 Transaktionen im Zeitraum, Summe: -641.14 CHF"));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
             "L-3001, 0",
             "L-3002, 1",
             "L-3003, 0",
@@ -184,13 +236,14 @@ class PortalControllerTest {
 
     @Test
     @WithMockUser(username = "anna")
-    void dateFilterDoesNotChangeBookingCountsOrTotalBalance() throws Exception {
+    void dateFilterAppliesToBookingCountsAndBalance() throws Exception {
         mvc.perform(get("/transactions").param("from", "2026-10-06").param("to", "2026-10-06"))
                 .andExpect(status().isOk())
                 .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(1))
-                .andExpect(xpath("//*[@data-testid='count-debits']").string("142 Belastungen"))
-                .andExpect(xpath("//*[@data-testid='count-credits']").string("13 Gutschriften"))
-                .andExpect(xpath("//*[@data-testid='balance-total']").string("-1'382.07 CHF"));
+                .andExpect(xpath("//*[@data-testid='count-debits']").string("0 Belastungen"))
+                .andExpect(xpath("//*[@data-testid='count-credits']").string("1 Gutschrift"))
+                .andExpect(xpath("//*[@data-testid='balance-total']").string("49.90 CHF"))
+                .andExpect(xpath("//*[@data-testid='balance-total']/@class").string("value credit"));
     }
 
     @Test
@@ -293,13 +346,13 @@ class PortalControllerTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"2026-10-05, 2", "2026-10-31, 4"})
+    @CsvSource({"2026-10-05, 2, -476.20 CHF", "2026-10-31, 4, -488.90 CHF"})
     @WithMockUser(username = "marco")
-    void filteredViewPreservesTotalBalanceAndCustomerIsolation(String to, int count) throws Exception {
+    void filteredViewUsesPeriodBalanceAndPreservesCustomerIsolation(String to, int count, String balance) throws Exception {
         mvc.perform(get("/transactions").param("from", "2026-10-01").param("to", to)
                         .param("username", "anna"))
                 .andExpect(status().isOk())
-                .andExpect(xpath("//*[@data-testid='balance-total']").string("-1'040.68 CHF"))
+                .andExpect(xpath("//*[@data-testid='balance-total']").string(balance))
                 .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(count))
                 .andExpect(xpath("//*[@data-testid='transaction-row'][starts-with(@data-transaction-id, 'A-')]")
                         .doesNotExist());
