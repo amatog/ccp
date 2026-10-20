@@ -88,12 +88,12 @@ class PortalControllerTest {
     void lenaSummaryAndFormattedAmountsMatchDemoData() throws Exception {
         mvc.perform(get("/transactions"))
                 .andExpect(status().isOk())
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(5))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(162))
                 .andExpect(xpath("//*[@data-testid='customer-name']").string("Lena Probst"))
                 .andExpect(xpath("//*[@data-testid='card-number']").string("**** **** **** 7070"))
-                .andExpect(xpath("//*[@data-testid='balance-total']").string("-1'462.45 CHF"))
-                .andExpect(xpath("//*[@data-testid='count-debits']").string("4 Belastungen"))
-                .andExpect(xpath("//*[@data-testid='count-credits']").string("1 Gutschrift"))
+                .andExpect(xpath("//*[@data-testid='balance-total']").string("-2'595.70 CHF"))
+                .andExpect(xpath("//*[@data-testid='count-debits']").string("146 Belastungen"))
+                .andExpect(xpath("//*[@data-testid='count-credits']").string("16 Gutschriften"))
                 .andExpect(xpath("//*[@data-transaction-id='L-3002']/td[@data-testid='tx-amount']")
                         .string(containsString("-500.05 CHF")))
                 .andExpect(xpath("//*[@data-transaction-id='L-3004']/td[@data-testid='tx-amount']")
@@ -111,9 +111,9 @@ class PortalControllerTest {
     void everyCategoryCellContainsExactlyOneBadge() throws Exception {
         mvc.perform(get("/transactions"))
                 .andExpect(status().isOk())
-                .andExpect(xpath("//td[@data-testid='tx-category']").nodeCount(6))
+                .andExpect(xpath("//td[@data-testid='tx-category']").nodeCount(155))
                 .andExpect(xpath("//td[@data-testid='tx-category'][count(*)=1"
-                        + " and count(span[@data-testid='category-badge'])=1]").nodeCount(6));
+                        + " and count(span[@data-testid='category-badge'])=1]").nodeCount(155));
     }
 
     @ParameterizedTest
@@ -165,10 +165,10 @@ class PortalControllerTest {
         mvc.perform(get("/transactions"))
                 .andExpect(status().isOk())
                 .andExpect(xpath("//*[@data-testid='account-summary']//*[@data-testid='count-debits']")
-                        .string("5 Belastungen"))
+                        .string("142 Belastungen"))
                 .andExpect(xpath("//*[@data-testid='account-summary']//*[@data-testid='count-credits']")
-                        .string("1 Gutschrift"))
-                .andExpect(xpath("//*[@data-testid='balance-total']").string("-628.95 CHF"))
+                        .string("13 Gutschriften"))
+                .andExpect(xpath("//*[@data-testid='balance-total']").string("-1'382.07 CHF"))
                 .andExpect(xpath("//*[@data-testid='balance-total']/../following-sibling::*[1]"
                         + "[@data-testid='transaction-counts']/*[@class='label']").string("Buchungen"));
     }
@@ -178,8 +178,8 @@ class PortalControllerTest {
     void marcoSeesOnlyHisBookingCounts() throws Exception {
         mvc.perform(get("/transactions").param("username", "anna"))
                 .andExpect(status().isOk())
-                .andExpect(xpath("//*[@data-testid='count-debits']").string("3 Belastungen"))
-                .andExpect(xpath("//*[@data-testid='count-credits']").string("1 Gutschrift"));
+                .andExpect(xpath("//*[@data-testid='count-debits']").string("130 Belastungen"))
+                .andExpect(xpath("//*[@data-testid='count-credits']").string("16 Gutschriften"));
     }
 
     @Test
@@ -188,9 +188,9 @@ class PortalControllerTest {
         mvc.perform(get("/transactions").param("from", "2026-10-06").param("to", "2026-10-06"))
                 .andExpect(status().isOk())
                 .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(1))
-                .andExpect(xpath("//*[@data-testid='count-debits']").string("5 Belastungen"))
-                .andExpect(xpath("//*[@data-testid='count-credits']").string("1 Gutschrift"))
-                .andExpect(xpath("//*[@data-testid='balance-total']").string("-628.95 CHF"));
+                .andExpect(xpath("//*[@data-testid='count-debits']").string("142 Belastungen"))
+                .andExpect(xpath("//*[@data-testid='count-credits']").string("13 Gutschriften"))
+                .andExpect(xpath("//*[@data-testid='balance-total']").string("-1'382.07 CHF"));
     }
 
     @Test
@@ -263,7 +263,7 @@ class PortalControllerTest {
                         .param("to", to == null ? "" : to))
                 .andExpect(status().isOk())
                 .andExpect(xpath("//*[@data-testid='filter-error']").string(error))
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(6))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(155))
                 .andExpect(xpath("//*[@data-testid='filter-summary']").doesNotExist())
                 .andExpect(xpath("//*[@data-testid='filter-no-results']").doesNotExist());
     }
@@ -285,7 +285,7 @@ class PortalControllerTest {
     void resetShowsAllTransactionsWithoutActiveFilter() throws Exception {
         mvc.perform(get("/transactions"))
                 .andExpect(status().isOk())
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(6))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(155))
                 .andExpect(xpath("//*[@data-testid='filter-from']/@value").string(""))
                 .andExpect(xpath("//*[@data-testid='filter-to']/@value").string(""))
                 .andExpect(xpath("//*[@data-testid='filter-summary']").doesNotExist())
@@ -299,7 +299,7 @@ class PortalControllerTest {
         mvc.perform(get("/transactions").param("from", "2026-10-01").param("to", to)
                         .param("username", "anna"))
                 .andExpect(status().isOk())
-                .andExpect(xpath("//*[@data-testid='balance-total']").string("-488.90 CHF"))
+                .andExpect(xpath("//*[@data-testid='balance-total']").string("-1'040.68 CHF"))
                 .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(count))
                 .andExpect(xpath("//*[@data-testid='transaction-row'][starts-with(@data-transaction-id, 'A-')]")
                         .doesNotExist());

@@ -13,7 +13,8 @@ test.describe('CCP-11 Kategorie als farbiges Etikett', () => {
   test('AK-1: Jede Zeile enthält in der Kategoriezelle genau ein Badge', async ({ page }) => {
     await loginAndOpenTransactions(page, 'anna');
     const rows = page.getByTestId('transaction-row');
-    await expect(rows).toHaveCount(6);
+    await expect(rows).toHaveCount(155);
+    // Stichprobe: die sechs neuesten Zeilen (Oktober 2026)
     for (let i = 0; i < 6; i++) {
       await expect(rows.nth(i).getByTestId('tx-category').getByTestId('category-badge')).toHaveCount(1);
     }

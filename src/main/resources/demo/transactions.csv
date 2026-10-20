@@ -1,0 +1,466 @@
+# Fiktive Demo-Transaktionen. Alle Personen, Händler und Beträge sind erfunden.
+# Zeitraum: 20.10.2025 bis heute. Format: username;id;date;merchant;category;amount;type
+# amount ist immer positiv, die Richtung ergibt sich aus type (DEBIT/CREDIT).
+anna;A-0001;2025-10-22;Denner Wiedikon;Lebensmittel;27.41;DEBIT
+anna;A-0002;2025-10-26;Coop City Zürich;Lebensmittel;17.13;DEBIT
+anna;A-0003;2025-10-27;Café Limmatquai;Gastronomie;9.45;DEBIT
+anna;A-0004;2025-10-28;Zalando;Shopping;43.78;DEBIT
+anna;A-0005;2025-11-02;Coop City Zürich;Lebensmittel;83.13;DEBIT
+anna;A-0006;2025-11-10;SBB Online;Reisen;50.72;DEBIT
+anna;A-0007;2025-11-11;Bäckerei Sternen;Lebensmittel;12.06;DEBIT
+anna;A-0008;2025-11-12;Pizzeria Bella Vista;Gastronomie;48.49;DEBIT
+anna;A-0009;2025-11-14;Swisscom;Telekom;65.00;DEBIT
+anna;A-0010;2025-11-16;Zalando;Shopping;167.51;DEBIT
+anna;A-0011;2025-11-18;SBB Online;Reisen;53.13;DEBIT
+anna;A-0012;2025-11-19;Coop City Zürich;Lebensmittel;79.77;DEBIT
+anna;A-0013;2025-11-20;Manor Zürich;Shopping;45.88;DEBIT
+anna;A-0014;2025-11-23;Bäckerei Sternen;Lebensmittel;8.18;DEBIT
+anna;A-0015;2025-11-24;Digitec Galaxus;Elektronik;311.70;DEBIT
+anna;A-0016;2025-11-25;Zahlung – besten Dank;Zahlung;97.77;CREDIT
+anna;A-0017;2025-11-26;ZVV Ticketautomat;Mobilität;6.20;DEBIT
+anna;A-0018;2025-12-01;Café Limmatquai;Gastronomie;9.16;DEBIT
+anna;A-0019;2025-12-03;Coop City Zürich;Lebensmittel;54.66;DEBIT
+anna;A-0020;2025-12-04;Digitec Galaxus;Elektronik;429.00;DEBIT
+anna;A-0021;2025-12-04;Restaurant Seeblick;Gastronomie;95.77;DEBIT
+anna;A-0022;2025-12-07;SBB Online;Reisen;67.62;DEBIT
+anna;A-0023;2025-12-09;SBB Online;Reisen;98.91;DEBIT
+anna;A-0024;2025-12-10;Manor Zürich;Shopping;189.90;DEBIT
+anna;A-0025;2025-12-12;Coop City Zürich;Lebensmittel;80.39;DEBIT
+anna;A-0026;2025-12-14;Denner Wiedikon;Lebensmittel;38.11;DEBIT
+anna;A-0027;2025-12-14;Swisscom;Telekom;65.00;DEBIT
+anna;A-0028;2025-12-15;Coop City Zürich;Lebensmittel;22.85;DEBIT
+anna;A-0029;2025-12-16;Denner Wiedikon;Lebensmittel;34.66;DEBIT
+anna;A-0030;2025-12-17;H&M Bahnhofstrasse;Shopping;88.97;DEBIT
+anna;A-0031;2025-12-18;Confiserie Sprüngli;Lebensmittel;64.50;DEBIT
+anna;A-0032;2025-12-22;Digitec Galaxus;Elektronik;178.65;DEBIT
+anna;A-0033;2025-12-25;Zahlung – besten Dank;Zahlung;931.77;CREDIT
+anna;A-0034;2025-12-26;ZVV Ticketautomat;Mobilität;5.22;DEBIT
+anna;A-0035;2025-12-28;Manor Zürich;Shopping;104.70;DEBIT
+anna;A-0036;2026-01-05;Zalando;Shopping;135.79;DEBIT
+anna;A-0037;2026-01-08;SBB Online;Reisen;119.00;DEBIT
+anna;A-0038;2026-01-11;Bäckerei Sternen;Lebensmittel;20.56;DEBIT
+anna;A-0039;2026-01-11;Coop City Zürich;Lebensmittel;30.57;DEBIT
+anna;A-0040;2026-01-14;Swisscom;Telekom;65.00;DEBIT
+anna;A-0041;2026-01-15;Coop City Zürich;Lebensmittel;18.72;DEBIT
+anna;A-0042;2026-01-19;ZVV Ticketautomat;Mobilität;7.37;DEBIT
+anna;A-0043;2026-01-22;ZVV Ticketautomat;Mobilität;4.48;DEBIT
+anna;A-0044;2026-01-25;Zahlung – besten Dank;Zahlung;1628.07;CREDIT
+anna;A-0045;2026-01-29;Restaurant Seeblick;Gastronomie;88.73;DEBIT
+anna;A-0046;2026-01-30;Migros Zürich;Lebensmittel;27.41;DEBIT
+anna;A-0047;2026-02-05;Bergbahnen Flumserberg;Reisen;158.00;DEBIT
+anna;A-0048;2026-02-07;Coop City Zürich;Lebensmittel;35.49;DEBIT
+anna;A-0049;2026-02-09;Restaurant Seeblick;Gastronomie;130.77;DEBIT
+anna;A-0050;2026-02-13;SBB Online;Reisen;97.33;DEBIT
+anna;A-0051;2026-02-14;Swisscom;Telekom;65.00;DEBIT
+anna;A-0052;2026-02-15;Zalando;Shopping;86.48;DEBIT
+anna;A-0053;2026-02-18;Coop City Zürich;Lebensmittel;29.34;DEBIT
+anna;A-0054;2026-02-21;ZVV Ticketautomat;Mobilität;4.09;DEBIT
+anna;A-0055;2026-02-22;Zalando Rückerstattung;Shopping;50.03;CREDIT
+anna;A-0056;2026-02-25;SBB Online;Reisen;36.78;DEBIT
+anna;A-0057;2026-02-25;Zahlung – besten Dank;Zahlung;517.63;CREDIT
+anna;A-0058;2026-02-27;Restaurant Seeblick;Gastronomie;128.06;DEBIT
+anna;A-0059;2026-02-28;Denner Wiedikon;Lebensmittel;31.35;DEBIT
+anna;A-0060;2026-02-28;H&M Bahnhofstrasse;Shopping;48.04;DEBIT
+anna;A-0061;2026-02-28;Migros Zürich;Lebensmittel;96.18;DEBIT
+anna;A-0062;2026-03-02;Bäckerei Sternen;Lebensmittel;18.32;DEBIT
+anna;A-0063;2026-03-03;Café Limmatquai;Gastronomie;10.41;DEBIT
+anna;A-0064;2026-03-03;Coop City Zürich;Lebensmittel;48.41;DEBIT
+anna;A-0065;2026-03-05;SBB Online;Reisen;43.00;DEBIT
+anna;A-0066;2026-03-07;Coop City Zürich;Lebensmittel;72.88;DEBIT
+anna;A-0067;2026-03-10;Bäckerei Sternen;Lebensmittel;14.89;DEBIT
+anna;A-0068;2026-03-13;ZVV Ticketautomat;Mobilität;4.11;DEBIT
+anna;A-0069;2026-03-14;Swisscom;Telekom;65.00;DEBIT
+anna;A-0070;2026-03-19;ZVV Ticketautomat;Mobilität;5.63;DEBIT
+anna;A-0071;2026-03-21;H&M Bahnhofstrasse;Shopping;77.52;DEBIT
+anna;A-0072;2026-03-22;Digitec Galaxus;Elektronik;214.08;DEBIT
+anna;A-0073;2026-03-23;Café Limmatquai;Gastronomie;22.66;DEBIT
+anna;A-0074;2026-03-25;Zahlung – besten Dank;Zahlung;896.88;CREDIT
+anna;A-0075;2026-04-01;Denner Wiedikon;Lebensmittel;26.90;DEBIT
+anna;A-0076;2026-04-01;SBB Online;Reisen;20.32;DEBIT
+anna;A-0077;2026-04-03;Zalando;Shopping;164.92;DEBIT
+anna;A-0078;2026-04-04;Café Limmatquai;Gastronomie;17.28;DEBIT
+anna;A-0079;2026-04-05;Manor Zürich;Shopping;67.65;DEBIT
+anna;A-0080;2026-04-09;Coop City Zürich;Lebensmittel;38.07;DEBIT
+anna;A-0081;2026-04-12;SBB Online;Reisen;45.50;DEBIT
+anna;A-0082;2026-04-14;Bäckerei Sternen;Lebensmittel;9.68;DEBIT
+anna;A-0083;2026-04-14;Swisscom;Telekom;65.00;DEBIT
+anna;A-0084;2026-04-15;Migros Zürich;Lebensmittel;105.71;DEBIT
+anna;A-0085;2026-04-16;ZVV Ticketautomat;Mobilität;4.26;DEBIT
+anna;A-0086;2026-04-25;Zahlung – besten Dank;Zahlung;596.91;CREDIT
+anna;A-0087;2026-04-28;Interdiscount;Elektronik;82.91;DEBIT
+anna;A-0088;2026-05-06;Coop City Zürich;Lebensmittel;57.68;DEBIT
+anna;A-0089;2026-05-06;Migros Zürich;Lebensmittel;107.21;DEBIT
+anna;A-0090;2026-05-13;Migros Zürich;Lebensmittel;102.36;DEBIT
+anna;A-0091;2026-05-14;Swisscom;Telekom;65.00;DEBIT
+anna;A-0092;2026-05-15;SBB Online;Reisen;42.04;DEBIT
+anna;A-0093;2026-05-17;Pizzeria Bella Vista;Gastronomie;74.73;DEBIT
+anna;A-0094;2026-05-18;Zalando;Shopping;113.54;DEBIT
+anna;A-0095;2026-05-21;Bäckerei Sternen;Lebensmittel;15.54;DEBIT
+anna;A-0096;2026-05-21;Manor Zürich;Shopping;74.41;DEBIT
+anna;A-0097;2026-05-25;Zahlung – besten Dank;Zahlung;648.20;CREDIT
+anna;A-0098;2026-05-29;SBB Online;Reisen;28.65;DEBIT
+anna;A-0099;2026-05-30;Migros Zürich;Lebensmittel;42.01;DEBIT
+anna;A-0100;2026-06-01;Bäckerei Sternen;Lebensmittel;12.09;DEBIT
+anna;A-0101;2026-06-04;Pizzeria Bella Vista;Gastronomie;76.90;DEBIT
+anna;A-0102;2026-06-07;Coop City Zürich;Lebensmittel;68.60;DEBIT
+anna;A-0103;2026-06-07;Denner Wiedikon;Lebensmittel;57.80;DEBIT
+anna;A-0104;2026-06-12;H&M Bahnhofstrasse;Shopping;44.27;DEBIT
+anna;A-0105;2026-06-14;Swisscom;Telekom;65.00;DEBIT
+anna;A-0106;2026-06-15;Bäckerei Sternen;Lebensmittel;9.38;DEBIT
+anna;A-0107;2026-06-15;SBB Online;Reisen;63.82;DEBIT
+anna;A-0108;2026-06-25;Zahlung – besten Dank;Zahlung;723.17;CREDIT
+anna;A-0109;2026-06-29;Pizzeria Bella Vista;Gastronomie;39.46;DEBIT
+anna;A-0110;2026-07-04;Coop City Zürich;Lebensmittel;49.00;DEBIT
+anna;A-0111;2026-07-04;ZVV Ticketautomat;Mobilität;5.78;DEBIT
+anna;A-0112;2026-07-11;Denner Wiedikon;Lebensmittel;53.52;DEBIT
+anna;A-0113;2026-07-14;Bäckerei Sternen;Lebensmittel;23.77;DEBIT
+anna;A-0114;2026-07-14;Swisscom;Telekom;65.00;DEBIT
+anna;A-0115;2026-07-15;Pizzeria Bella Vista;Gastronomie;83.30;DEBIT
+anna;A-0116;2026-07-16;Coop City Zürich;Lebensmittel;37.58;DEBIT
+anna;A-0117;2026-07-20;Hotel Bellavista Lugano;Reisen;396.00;DEBIT
+anna;A-0118;2026-07-23;Restaurant Seeblick;Gastronomie;116.22;DEBIT
+anna;A-0119;2026-07-25;Edelweiss Air;Reisen;478.00;DEBIT
+anna;A-0120;2026-07-25;Zahlung – besten Dank;Zahlung;437.32;CREDIT
+anna;A-0121;2026-07-26;ZVV Ticketautomat;Mobilität;8.86;DEBIT
+anna;A-0122;2026-07-27;Manor Zürich;Shopping;122.85;DEBIT
+anna;A-0123;2026-07-28;Restaurant Seeblick;Gastronomie;139.52;DEBIT
+anna;A-0124;2026-07-29;Bäckerei Sternen;Lebensmittel;20.79;DEBIT
+anna;A-0125;2026-07-30;SBB Online;Reisen;59.70;DEBIT
+anna;A-0126;2026-08-01;SBB Online;Reisen;86.10;DEBIT
+anna;A-0127;2026-08-04;Pizzeria Bella Vista;Gastronomie;71.11;DEBIT
+anna;A-0128;2026-08-09;Denner Wiedikon;Lebensmittel;58.25;DEBIT
+anna;A-0129;2026-08-09;Migros Zürich;Lebensmittel;87.78;DEBIT
+anna;A-0130;2026-08-13;Migros Zürich;Lebensmittel;54.62;DEBIT
+anna;A-0131;2026-08-14;Swisscom;Telekom;65.00;DEBIT
+anna;A-0132;2026-08-15;Restaurant Seeblick;Gastronomie;116.21;DEBIT
+anna;A-0133;2026-08-17;Bäckerei Sternen;Lebensmittel;12.57;DEBIT
+anna;A-0134;2026-08-24;Denner Wiedikon;Lebensmittel;17.64;DEBIT
+anna;A-0135;2026-08-25;Zahlung – besten Dank;Zahlung;1659.89;CREDIT
+anna;A-0136;2026-08-29;Manor Zürich;Shopping;112.94;DEBIT
+anna;A-0137;2026-08-31;Digitec Galaxus;Elektronik;84.68;DEBIT
+anna;A-0138;2026-09-03;Bäckerei Sternen;Lebensmittel;18.45;DEBIT
+anna;A-0139;2026-09-04;Restaurant Seeblick;Gastronomie;139.04;DEBIT
+anna;A-0140;2026-09-04;SBB Online;Reisen;82.69;DEBIT
+anna;A-0141;2026-09-06;Coop City Zürich;Lebensmittel;87.34;DEBIT
+anna;A-0142;2026-09-12;Restaurant Seeblick;Gastronomie;102.94;DEBIT
+anna;A-0143;2026-09-14;Swisscom;Telekom;65.00;DEBIT
+anna;A-0144;2026-09-14;Zalando;Shopping;170.10;DEBIT
+anna;A-0145;2026-09-17;Bäckerei Sternen;Lebensmittel;14.66;DEBIT
+anna;A-0146;2026-09-17;SBB Online;Reisen;54.70;DEBIT
+anna;A-0147;2026-09-25;ZVV Ticketautomat;Mobilität;4.81;DEBIT
+anna;A-0148;2026-09-25;Zahlung – besten Dank;Zahlung;766.90;CREDIT
+anna;A-0149;2026-09-29;Bäckerei Sternen;Lebensmittel;13.39;DEBIT
+anna;A-1001;2026-10-02;Migros Zürich;Lebensmittel;84.35;DEBIT
+anna;A-1002;2026-10-04;SBB Online;Reisen;62.00;DEBIT
+anna;A-1003;2026-10-06;Zalando Rückerstattung;Shopping;49.90;CREDIT
+anna;A-1004;2026-10-09;Restaurant Seeblick;Gastronomie;118.50;DEBIT
+anna;A-1005;2026-10-12;Digitec Galaxus;Elektronik;349.00;DEBIT
+anna;A-1006;2026-10-14;Swisscom;Telekom;65.00;DEBIT
+marco;M-0001;2025-10-20;Sunrise;Telekom;59.90;DEBIT
+marco;M-0002;2025-10-23;Migros Marktgasse;Lebensmittel;57.82;DEBIT
+marco;M-0003;2025-10-23;Tankstelle Aare;Mobilität;98.58;DEBIT
+marco;M-0004;2025-10-26;Migros Marktgasse;Lebensmittel;94.65;DEBIT
+marco;M-0005;2025-11-01;Volg Muri;Lebensmittel;21.18;DEBIT
+marco;M-0006;2025-11-02;Restaurant Kornhauskeller;Gastronomie;57.23;DEBIT
+marco;M-0007;2025-11-04;Parkhaus Bahnhof Bern;Mobilität;10.35;DEBIT
+marco;M-0008;2025-11-09;Migros Marktgasse;Lebensmittel;92.65;DEBIT
+marco;M-0009;2025-11-12;Coop Bern;Lebensmittel;43.42;DEBIT
+marco;M-0010;2025-11-12;Hotel Alpenblick;Reisen;377.98;DEBIT
+marco;M-0011;2025-11-14;Coop Bern;Lebensmittel;104.77;DEBIT
+marco;M-0012;2025-11-14;Ochsner Sport;Shopping;60.09;DEBIT
+marco;M-0013;2025-11-14;Parkhaus Bahnhof Bern;Mobilität;20.11;DEBIT
+marco;M-0014;2025-11-19;Parkhaus Bahnhof Bern;Mobilität;20.22;DEBIT
+marco;M-0015;2025-11-20;Sunrise;Telekom;59.90;DEBIT
+marco;M-0016;2025-11-25;Zahlung – besten Dank;Zahlung;310.95;CREDIT
+marco;M-0017;2025-11-27;Garage Wankdorf;Mobilität;485.00;DEBIT
+marco;M-0018;2025-11-27;Restaurant Kornhauskeller;Gastronomie;116.31;DEBIT
+marco;M-0019;2025-11-29;Coop Bern;Lebensmittel;88.58;DEBIT
+marco;M-0020;2025-12-01;Fust Bern;Elektronik;58.05;DEBIT
+marco;M-0021;2025-12-10;Volg Muri;Lebensmittel;14.65;DEBIT
+marco;M-0022;2025-12-11;Ochsner Sport;Shopping;116.03;DEBIT
+marco;M-0023;2025-12-12;Hotel Alpenblick Gutschrift;Reisen;134.24;CREDIT
+marco;M-0024;2025-12-13;Tankstelle Aare;Mobilität;95.10;DEBIT
+marco;M-0025;2025-12-16;Coop Bern;Lebensmittel;75.61;DEBIT
+marco;M-0026;2025-12-17;Migros Marktgasse;Lebensmittel;47.15;DEBIT
+marco;M-0027;2025-12-19;Bistro Bundesplatz;Gastronomie;21.10;DEBIT
+marco;M-0028;2025-12-20;Sunrise;Telekom;59.90;DEBIT
+marco;M-0029;2025-12-25;SBB Online;Reisen;111.29;DEBIT
+marco;M-0030;2025-12-25;Zahlung – besten Dank;Zahlung;1557.79;CREDIT
+marco;M-0031;2025-12-28;Tankstelle Aare;Mobilität;92.04;DEBIT
+marco;M-0032;2026-01-01;Migros Marktgasse;Lebensmittel;29.30;DEBIT
+marco;M-0033;2026-01-04;Coop Bern;Lebensmittel;83.29;DEBIT
+marco;M-0034;2026-01-04;Loeb Bern;Shopping;55.04;DEBIT
+marco;M-0035;2026-01-06;Skischule Adelboden;Reisen;320.00;DEBIT
+marco;M-0036;2026-01-13;Volg Muri;Lebensmittel;11.70;DEBIT
+marco;M-0037;2026-01-14;Tankstelle Aare;Mobilität;69.70;DEBIT
+marco;M-0038;2026-01-20;Sunrise;Telekom;59.90;DEBIT
+marco;M-0039;2026-01-25;Tankstelle Aare;Mobilität;86.29;DEBIT
+marco;M-0040;2026-01-25;Zahlung – besten Dank;Zahlung;556.68;CREDIT
+marco;M-0041;2026-01-26;Ochsner Sport;Shopping;167.78;DEBIT
+marco;M-0042;2026-01-30;Restaurant Kornhauskeller;Gastronomie;154.22;DEBIT
+marco;M-0043;2026-01-30;Volg Muri;Lebensmittel;22.88;DEBIT
+marco;M-0044;2026-01-31;Migros Marktgasse;Lebensmittel;20.82;DEBIT
+marco;M-0045;2026-02-03;Coop Bern;Lebensmittel;59.52;DEBIT
+marco;M-0046;2026-02-03;Tankstelle Aare;Mobilität;78.41;DEBIT
+marco;M-0047;2026-02-10;Migros Marktgasse;Lebensmittel;43.40;DEBIT
+marco;M-0048;2026-02-12;Restaurant Kornhauskeller;Gastronomie;94.36;DEBIT
+marco;M-0049;2026-02-16;Parkhaus Bahnhof Bern;Mobilität;17.18;DEBIT
+marco;M-0050;2026-02-17;SBB Online;Reisen;133.73;DEBIT
+marco;M-0051;2026-02-18;Volg Muri;Lebensmittel;29.38;DEBIT
+marco;M-0052;2026-02-20;Ochsner Sport;Shopping;41.17;DEBIT
+marco;M-0053;2026-02-20;Parkhaus Bahnhof Bern;Mobilität;14.85;DEBIT
+marco;M-0054;2026-02-20;Sunrise;Telekom;59.90;DEBIT
+marco;M-0055;2026-02-24;Volg Muri;Lebensmittel;14.17;DEBIT
+marco;M-0056;2026-02-25;Zahlung – besten Dank;Zahlung;1080.92;CREDIT
+marco;M-0057;2026-03-03;Volg Muri;Lebensmittel;38.77;DEBIT
+marco;M-0058;2026-03-06;Volg Muri;Lebensmittel;14.25;DEBIT
+marco;M-0059;2026-03-17;Tankstelle Aare;Mobilität;64.69;DEBIT
+marco;M-0060;2026-03-18;Restaurant Kornhauskeller;Gastronomie;152.54;DEBIT
+marco;M-0061;2026-03-20;Parkhaus Bahnhof Bern;Mobilität;9.21;DEBIT
+marco;M-0062;2026-03-20;Sunrise;Telekom;59.90;DEBIT
+marco;M-0063;2026-03-25;Zahlung – besten Dank;Zahlung;586.07;CREDIT
+marco;M-0064;2026-03-29;Restaurant Kornhauskeller;Gastronomie;119.16;DEBIT
+marco;M-0065;2026-03-30;Migros Marktgasse;Lebensmittel;83.28;DEBIT
+marco;M-0066;2026-04-13;Migros Marktgasse;Lebensmittel;87.04;DEBIT
+marco;M-0067;2026-04-15;Restaurant Kornhauskeller;Gastronomie;145.48;DEBIT
+marco;M-0068;2026-04-18;Ochsner Sport Rückerstattung;Shopping;34.13;CREDIT
+marco;M-0069;2026-04-20;Sunrise;Telekom;59.90;DEBIT
+marco;M-0070;2026-04-20;Volg Muri;Lebensmittel;24.29;DEBIT
+marco;M-0071;2026-04-22;Loeb Bern;Shopping;153.30;DEBIT
+marco;M-0072;2026-04-24;Parkhaus Bahnhof Bern;Mobilität;18.35;DEBIT
+marco;M-0073;2026-04-25;Zahlung – besten Dank;Zahlung;541.80;CREDIT
+marco;M-0074;2026-04-26;Hotel Alpenblick;Reisen;230.34;DEBIT
+marco;M-0075;2026-04-29;Parkhaus Bahnhof Bern;Mobilität;9.68;DEBIT
+marco;M-0076;2026-04-29;Volg Muri;Lebensmittel;20.59;DEBIT
+marco;M-0077;2026-05-01;Migros Marktgasse;Lebensmittel;80.56;DEBIT
+marco;M-0078;2026-05-05;Parkhaus Bahnhof Bern;Mobilität;18.99;DEBIT
+marco;M-0079;2026-05-10;Loeb Bern;Shopping;140.11;DEBIT
+marco;M-0080;2026-05-16;Migros Marktgasse;Lebensmittel;67.42;DEBIT
+marco;M-0081;2026-05-16;Parkhaus Bahnhof Bern;Mobilität;23.20;DEBIT
+marco;M-0082;2026-05-17;Parkhaus Bahnhof Bern;Mobilität;14.92;DEBIT
+marco;M-0083;2026-05-20;Coop Bern;Lebensmittel;102.19;DEBIT
+marco;M-0084;2026-05-20;Sunrise;Telekom;59.90;DEBIT
+marco;M-0085;2026-05-25;SBB Online;Reisen;106.07;DEBIT
+marco;M-0086;2026-05-25;Zahlung – besten Dank;Zahlung;714.84;CREDIT
+marco;M-0087;2026-05-28;Coop Bern;Lebensmittel;25.37;DEBIT
+marco;M-0088;2026-05-28;Coop Bern;Lebensmittel;78.82;DEBIT
+marco;M-0089;2026-05-28;Hotel Alpenblick Gutschrift;Reisen;49.89;CREDIT
+marco;M-0090;2026-05-29;Restaurant Kornhauskeller;Gastronomie;147.39;DEBIT
+marco;M-0091;2026-06-04;Parkhaus Bahnhof Bern;Mobilität;12.72;DEBIT
+marco;M-0092;2026-06-12;Coop Bern;Lebensmittel;86.21;DEBIT
+marco;M-0093;2026-06-13;Tankstelle Aare;Mobilität;105.36;DEBIT
+marco;M-0094;2026-06-14;Ochsner Sport;Shopping;194.96;DEBIT
+marco;M-0095;2026-06-16;Coop Bern;Lebensmittel;64.53;DEBIT
+marco;M-0096;2026-06-19;SBB Online;Reisen;108.70;DEBIT
+marco;M-0097;2026-06-20;Coop Bern;Lebensmittel;91.82;DEBIT
+marco;M-0098;2026-06-20;Restaurant Kornhauskeller;Gastronomie;50.48;DEBIT
+marco;M-0099;2026-06-20;Sunrise;Telekom;59.90;DEBIT
+marco;M-0100;2026-06-22;Volg Muri;Lebensmittel;32.57;DEBIT
+marco;M-0101;2026-06-25;Zahlung – besten Dank;Zahlung;815.05;CREDIT
+marco;M-0102;2026-06-30;Parkhaus Bahnhof Bern;Mobilität;19.33;DEBIT
+marco;M-0103;2026-07-01;Ochsner Sport;Shopping;180.97;DEBIT
+marco;M-0104;2026-07-02;Migros Marktgasse;Lebensmittel;41.36;DEBIT
+marco;M-0105;2026-07-05;Bistro Bundesplatz;Gastronomie;36.55;DEBIT
+marco;M-0106;2026-07-06;Ochsner Sport Rückerstattung;Shopping;38.14;CREDIT
+marco;M-0107;2026-07-14;Migros Marktgasse;Lebensmittel;58.74;DEBIT
+marco;M-0108;2026-07-14;Volg Muri;Lebensmittel;34.05;DEBIT
+marco;M-0109;2026-07-15;Tankstelle Aare;Mobilität;79.39;DEBIT
+marco;M-0110;2026-07-16;Tankstelle Aare;Mobilität;72.94;DEBIT
+marco;M-0111;2026-07-20;Migros Marktgasse;Lebensmittel;90.67;DEBIT
+marco;M-0112;2026-07-20;Sunrise;Telekom;59.90;DEBIT
+marco;M-0113;2026-07-20;Volg Muri;Lebensmittel;28.87;DEBIT
+marco;M-0114;2026-07-23;Fust Bern;Elektronik;155.78;DEBIT
+marco;M-0115;2026-07-24;SBB Online;Reisen;124.87;DEBIT
+marco;M-0116;2026-07-25;Zahlung – besten Dank;Zahlung;826.58;CREDIT
+marco;M-0117;2026-07-28;Bistro Bundesplatz;Gastronomie;16.82;DEBIT
+marco;M-0118;2026-07-29;Ochsner Sport;Shopping;166.96;DEBIT
+marco;M-0119;2026-08-01;Camping Lago Maggiore;Reisen;285.00;DEBIT
+marco;M-0120;2026-08-05;Coop Bern;Lebensmittel;46.26;DEBIT
+marco;M-0121;2026-08-11;Coop Bern;Lebensmittel;47.88;DEBIT
+marco;M-0122;2026-08-11;Fust Bern;Elektronik;230.19;DEBIT
+marco;M-0123;2026-08-13;Tankstelle Aare;Mobilität;85.63;DEBIT
+marco;M-0124;2026-08-14;Migros Marktgasse;Lebensmittel;68.20;DEBIT
+marco;M-0125;2026-08-14;Volg Muri;Lebensmittel;14.76;DEBIT
+marco;M-0126;2026-08-17;Tankstelle Aare;Mobilität;80.45;DEBIT
+marco;M-0127;2026-08-19;SBB Online;Reisen;105.50;DEBIT
+marco;M-0128;2026-08-20;Sunrise;Telekom;59.90;DEBIT
+marco;M-0129;2026-08-25;Zahlung – besten Dank;Zahlung;1109.73;CREDIT
+marco;M-0130;2026-08-26;Restaurant Kornhauskeller;Gastronomie;90.92;DEBIT
+marco;M-0131;2026-08-27;Bistro Bundesplatz;Gastronomie;27.30;DEBIT
+marco;M-0132;2026-09-06;Parkhaus Bahnhof Bern;Mobilität;19.94;DEBIT
+marco;M-0133;2026-09-06;Volg Muri;Lebensmittel;18.98;DEBIT
+marco;M-0134;2026-09-13;Restaurant Kornhauskeller;Gastronomie;115.61;DEBIT
+marco;M-0135;2026-09-16;Tankstelle Aare;Mobilität;109.89;DEBIT
+marco;M-0136;2026-09-16;Volg Muri;Lebensmittel;31.56;DEBIT
+marco;M-0137;2026-09-19;Volg Muri;Lebensmittel;32.49;DEBIT
+marco;M-0138;2026-09-20;Sunrise;Telekom;59.90;DEBIT
+marco;M-0139;2026-09-21;Parkhaus Bahnhof Bern;Mobilität;15.14;DEBIT
+marco;M-0140;2026-09-25;Bistro Bundesplatz;Gastronomie;20.78;DEBIT
+marco;M-0141;2026-09-25;Zahlung – besten Dank;Zahlung;1141.99;CREDIT
+marco;M-0142;2026-09-27;Loeb Bern;Shopping;127.49;DEBIT
+marco;M-2001;2026-10-01;Coop Bern;Lebensmittel;56.20;DEBIT
+marco;M-2002;2026-10-05;Hotel Alpenblick;Reisen;420.00;DEBIT
+marco;M-2003;2026-10-08;Hotel Alpenblick Gutschrift;Reisen;80.00;CREDIT
+marco;M-2004;2026-10-11;Tankstelle Aare;Mobilität;92.70;DEBIT
+lena;L-0001;2025-10-21;Migros Baden;Lebensmittel;112.40;DEBIT
+lena;L-0002;2025-10-22;Bäckerei Sonnenhof;Lebensmittel;5.15;DEBIT
+lena;L-0003;2025-10-23;Möbelhaus Limmat;Shopping;364.61;DEBIT
+lena;L-0004;2025-10-24;Baden Parking;Mobilität;6.40;DEBIT
+lena;L-0005;2025-10-28;Restaurant Kursaal;Gastronomie;105.44;DEBIT
+lena;L-0006;2025-11-01;Coop Wettingen;Lebensmittel;26.15;DEBIT
+lena;L-0007;2025-11-05;Salt Mobile;Telekom;49.95;DEBIT
+lena;L-0008;2025-11-09;Baden Parking;Mobilität;12.80;DEBIT
+lena;L-0009;2025-11-10;Coop Wettingen;Lebensmittel;78.06;DEBIT
+lena;L-0010;2025-11-11;Baden Parking;Mobilität;7.27;DEBIT
+lena;L-0011;2025-11-13;Möbelhaus Limmat;Shopping;266.03;DEBIT
+lena;L-0012;2025-11-17;Migros Baden;Lebensmittel;27.17;DEBIT
+lena;L-0013;2025-11-20;Migros Baden;Lebensmittel;51.48;DEBIT
+lena;L-0014;2025-11-20;Möbelhaus Limmat;Shopping;334.93;DEBIT
+lena;L-0015;2025-11-21;Coop Wettingen;Lebensmittel;55.75;DEBIT
+lena;L-0016;2025-11-21;Restaurant Kursaal;Gastronomie;63.25;DEBIT
+lena;L-0017;2025-11-25;Zahlung – besten Dank;Zahlung;594.00;CREDIT
+lena;L-0018;2025-11-26;Restaurant Kursaal;Gastronomie;101.27;DEBIT
+lena;L-0019;2025-11-26;Reisebüro Horizont Gutschrift;Reisen;159.98;CREDIT
+lena;L-0020;2025-12-05;Salt Mobile;Telekom;49.95;DEBIT
+lena;L-0021;2025-12-07;Globus Baden;Shopping;70.15;DEBIT
+lena;L-0022;2025-12-09;Migros Baden;Lebensmittel;82.85;DEBIT
+lena;L-0023;2025-12-15;Baden Parking;Mobilität;16.48;DEBIT
+lena;L-0024;2025-12-15;Café Badstrasse;Gastronomie;17.84;DEBIT
+lena;L-0025;2025-12-16;Baden Parking;Mobilität;7.36;DEBIT
+lena;L-0026;2025-12-20;Restaurant Kursaal;Gastronomie;236.00;DEBIT
+lena;L-0027;2025-12-21;Globus Baden;Shopping;468.00;DEBIT
+lena;L-0028;2025-12-24;Coop Wettingen;Lebensmittel;88.17;DEBIT
+lena;L-0029;2025-12-24;Migros Baden;Lebensmittel;116.73;DEBIT
+lena;L-0030;2025-12-25;Zahlung – besten Dank;Zahlung;914.13;CREDIT
+lena;L-0031;2025-12-27;Globus Baden;Shopping;53.02;DEBIT
+lena;L-0032;2025-12-29;Bäckerei Sonnenhof;Lebensmittel;11.37;DEBIT
+lena;L-0033;2025-12-29;Restaurant Kursaal;Gastronomie;72.05;DEBIT
+lena;L-0034;2025-12-30;Coop Wettingen;Lebensmittel;41.40;DEBIT
+lena;L-0035;2026-01-01;SBB Online;Reisen;92.62;DEBIT
+lena;L-0036;2026-01-03;Bäckerei Sonnenhof;Lebensmittel;17.39;DEBIT
+lena;L-0037;2026-01-05;Salt Mobile;Telekom;49.95;DEBIT
+lena;L-0038;2026-01-10;Reisebüro Horizont;Reisen;230.78;DEBIT
+lena;L-0039;2026-01-11;Bäckerei Sonnenhof;Lebensmittel;6.49;DEBIT
+lena;L-0040;2026-01-19;Baden Parking;Mobilität;13.29;DEBIT
+lena;L-0041;2026-01-21;Coop Wettingen;Lebensmittel;75.52;DEBIT
+lena;L-0042;2026-01-24;Globus Baden;Shopping;42.94;DEBIT
+lena;L-0043;2026-01-25;Zahlung – besten Dank;Zahlung;1331.37;CREDIT
+lena;L-0044;2026-01-27;Restaurant Kursaal;Gastronomie;179.94;DEBIT
+lena;L-0045;2026-02-02;Möbelhaus Limmat;Shopping;99.77;DEBIT
+lena;L-0046;2026-02-03;Globus Baden Rückerstattung;Shopping;77.94;CREDIT
+lena;L-0047;2026-02-05;Salt Mobile;Telekom;49.95;DEBIT
+lena;L-0048;2026-02-06;Elektro Zentrum Baden;Elektronik;283.66;DEBIT
+lena;L-0049;2026-02-12;Coop Wettingen;Lebensmittel;61.41;DEBIT
+lena;L-0050;2026-02-13;Restaurant Kursaal;Gastronomie;91.38;DEBIT
+lena;L-0051;2026-02-14;Bäckerei Sonnenhof;Lebensmittel;20.14;DEBIT
+lena;L-0052;2026-02-14;Café Badstrasse;Gastronomie;8.71;DEBIT
+lena;L-0053;2026-02-17;Baden Parking;Mobilität;15.57;DEBIT
+lena;L-0054;2026-02-17;SBB Online;Reisen;79.42;DEBIT
+lena;L-0055;2026-02-18;Migros Baden;Lebensmittel;42.77;DEBIT
+lena;L-0056;2026-02-20;Globus Baden;Shopping;116.90;DEBIT
+lena;L-0057;2026-02-22;Baden Parking;Mobilität;8.37;DEBIT
+lena;L-0058;2026-02-25;Zahlung – besten Dank;Zahlung;708.92;CREDIT
+lena;L-0059;2026-02-26;Café Badstrasse;Gastronomie;9.95;DEBIT
+lena;L-0060;2026-02-26;Coop Wettingen;Lebensmittel;26.89;DEBIT
+lena;L-0061;2026-02-27;Coop Wettingen;Lebensmittel;90.86;DEBIT
+lena;L-0062;2026-03-03;Globus Baden;Shopping;114.12;DEBIT
+lena;L-0063;2026-03-04;Migros Baden;Lebensmittel;36.65;DEBIT
+lena;L-0064;2026-03-05;Salt Mobile;Telekom;49.95;DEBIT
+lena;L-0065;2026-03-05;Reisebüro Horizont Gutschrift;Reisen;57.58;CREDIT
+lena;L-0066;2026-03-10;Café Badstrasse;Gastronomie;19.15;DEBIT
+lena;L-0067;2026-03-14;Migros Baden;Lebensmittel;123.73;DEBIT
+lena;L-0068;2026-03-15;Baden Parking;Mobilität;9.11;DEBIT
+lena;L-0069;2026-03-17;Café Badstrasse;Gastronomie;8.52;DEBIT
+lena;L-0070;2026-03-17;Migros Baden;Lebensmittel;45.44;DEBIT
+lena;L-0071;2026-03-19;Globus Baden;Shopping;161.91;DEBIT
+lena;L-0072;2026-03-23;Baden Parking;Mobilität;16.39;DEBIT
+lena;L-0073;2026-03-25;Zahlung – besten Dank;Zahlung;927.81;CREDIT
+lena;L-0074;2026-03-27;Coop Wettingen;Lebensmittel;24.60;DEBIT
+lena;L-0075;2026-03-28;Migros Baden;Lebensmittel;37.80;DEBIT
+lena;L-0076;2026-04-04;Elektro Zentrum Baden;Elektronik;335.15;DEBIT
+lena;L-0077;2026-04-05;Salt Mobile;Telekom;49.95;DEBIT
+lena;L-0078;2026-04-10;Coop Wettingen;Lebensmittel;24.92;DEBIT
+lena;L-0079;2026-04-11;Möbelhaus Limmat;Shopping;345.07;DEBIT
+lena;L-0080;2026-04-13;SBB Online;Reisen;59.13;DEBIT
+lena;L-0081;2026-04-19;Baden Parking;Mobilität;17.09;DEBIT
+lena;L-0082;2026-04-19;Möbelhaus Limmat;Shopping;495.00;DEBIT
+lena;L-0083;2026-04-21;Café Badstrasse;Gastronomie;13.92;DEBIT
+lena;L-0084;2026-04-22;Migros Baden;Lebensmittel;104.29;DEBIT
+lena;L-0085;2026-04-22;Migros Baden;Lebensmittel;66.57;DEBIT
+lena;L-0086;2026-04-23;SBB Online;Reisen;23.33;DEBIT
+lena;L-0087;2026-04-25;Bäckerei Sonnenhof;Lebensmittel;17.52;DEBIT
+lena;L-0088;2026-04-25;Zahlung – besten Dank;Zahlung;589.79;CREDIT
+lena;L-0089;2026-05-04;Bäckerei Sonnenhof;Lebensmittel;5.15;DEBIT
+lena;L-0090;2026-05-05;Salt Mobile;Telekom;49.95;DEBIT
+lena;L-0091;2026-05-11;Globus Baden;Shopping;71.96;DEBIT
+lena;L-0092;2026-05-12;Migros Baden;Lebensmittel;73.94;DEBIT
+lena;L-0093;2026-05-14;Elektro Zentrum Baden;Elektronik;422.56;DEBIT
+lena;L-0094;2026-05-20;Baden Parking;Mobilität;16.95;DEBIT
+lena;L-0095;2026-05-22;Reisebüro Horizont;Reisen;205.12;DEBIT
+lena;L-0096;2026-05-22;SBB Online;Reisen;89.62;DEBIT
+lena;L-0097;2026-05-23;Baden Parking;Mobilität;15.07;DEBIT
+lena;L-0098;2026-05-25;Zahlung – besten Dank;Zahlung;1551.94;CREDIT
+lena;L-0099;2026-05-29;Restaurant Kursaal;Gastronomie;117.41;DEBIT
+lena;L-0100;2026-05-30;Bäckerei Sonnenhof;Lebensmittel;16.91;DEBIT
+lena;L-0101;2026-06-01;Coop Wettingen;Lebensmittel;91.46;DEBIT
+lena;L-0102;2026-06-03;Globus Baden;Shopping;180.24;DEBIT
+lena;L-0103;2026-06-05;Salt Mobile;Telekom;49.95;DEBIT
+lena;L-0104;2026-06-06;Migros Baden;Lebensmittel;118.39;DEBIT
+lena;L-0105;2026-06-10;Möbelhaus Limmat;Shopping;184.85;DEBIT
+lena;L-0106;2026-06-13;Baden Parking;Mobilität;7.80;DEBIT
+lena;L-0107;2026-06-14;Café Badstrasse;Gastronomie;19.05;DEBIT
+lena;L-0108;2026-06-14;Migros Baden;Lebensmittel;65.46;DEBIT
+lena;L-0109;2026-06-16;Restaurant Kursaal;Gastronomie;162.02;DEBIT
+lena;L-0110;2026-06-17;Café Badstrasse;Gastronomie;24.94;DEBIT
+lena;L-0111;2026-06-21;Baden Parking;Mobilität;13.21;DEBIT
+lena;L-0112;2026-06-23;Reisebüro Horizont;Reisen;214.00;DEBIT
+lena;L-0113;2026-06-24;Coop Wettingen;Lebensmittel;94.82;DEBIT
+lena;L-0114;2026-06-25;Zahlung – besten Dank;Zahlung;1084.64;CREDIT
+lena;L-0115;2026-06-26;Coop Wettingen;Lebensmittel;55.02;DEBIT
+lena;L-0116;2026-06-27;Reisebüro Horizont;Reisen;489.00;DEBIT
+lena;L-0117;2026-06-30;Elektro Zentrum Baden;Elektronik;202.30;DEBIT
+lena;L-0118;2026-07-03;Migros Baden;Lebensmittel;106.90;DEBIT
+lena;L-0119;2026-07-05;Salt Mobile;Telekom;49.95;DEBIT
+lena;L-0120;2026-07-13;Globus Baden;Shopping;209.47;DEBIT
+lena;L-0121;2026-07-14;Baden Parking;Mobilität;6.64;DEBIT
+lena;L-0122;2026-07-19;Migros Baden;Lebensmittel;79.46;DEBIT
+lena;L-0123;2026-07-21;Restaurant Kursaal;Gastronomie;130.00;DEBIT
+lena;L-0124;2026-07-22;Bäckerei Sonnenhof;Lebensmittel;7.72;DEBIT
+lena;L-0125;2026-07-22;Restaurant Kursaal;Gastronomie;56.39;DEBIT
+lena;L-0126;2026-07-23;Baden Parking;Mobilität;8.03;DEBIT
+lena;L-0127;2026-07-24;Coop Wettingen;Lebensmittel;25.37;DEBIT
+lena;L-0128;2026-07-25;Zahlung – besten Dank;Zahlung;1972.51;CREDIT
+lena;L-0129;2026-07-28;Coop Wettingen;Lebensmittel;56.59;DEBIT
+lena;L-0130;2026-07-29;SBB Online;Reisen;24.85;DEBIT
+lena;L-0131;2026-08-05;Salt Mobile;Telekom;49.95;DEBIT
+lena;L-0132;2026-08-06;Baden Parking;Mobilität;20.79;DEBIT
+lena;L-0133;2026-08-06;Reisebüro Horizont;Reisen;453.23;DEBIT
+lena;L-0134;2026-08-08;Migros Baden;Lebensmittel;37.51;DEBIT
+lena;L-0135;2026-08-09;Reisebüro Horizont Gutschrift;Reisen;150.73;CREDIT
+lena;L-0136;2026-08-10;Coop Wettingen;Lebensmittel;89.32;DEBIT
+lena;L-0137;2026-08-10;Migros Baden;Lebensmittel;89.72;DEBIT
+lena;L-0138;2026-08-18;Restaurant Kursaal;Gastronomie;108.18;DEBIT
+lena;L-0139;2026-08-25;Zahlung – besten Dank;Zahlung;761.37;CREDIT
+lena;L-0140;2026-08-26;Restaurant Kursaal;Gastronomie;156.27;DEBIT
+lena;L-0141;2026-08-29;Möbelhaus Limmat;Shopping;435.56;DEBIT
+lena;L-0142;2026-08-30;Coop Wettingen;Lebensmittel;42.48;DEBIT
+lena;L-0143;2026-08-31;Möbelhaus Limmat;Shopping;306.58;DEBIT
+lena;L-0144;2026-09-05;Salt Mobile;Telekom;49.95;DEBIT
+lena;L-0145;2026-09-10;Coop Wettingen;Lebensmittel;93.82;DEBIT
+lena;L-0146;2026-09-15;Restaurant Kursaal;Gastronomie;63.41;DEBIT
+lena;L-0147;2026-09-17;Coop Wettingen;Lebensmittel;84.97;DEBIT
+lena;L-0148;2026-09-20;Baden Parking;Mobilität;17.80;DEBIT
+lena;L-0149;2026-09-20;Möbelhaus Limmat;Shopping;279.40;DEBIT
+lena;L-0150;2026-09-21;Baden Parking;Mobilität;13.37;DEBIT
+lena;L-0151;2026-09-22;Bäckerei Sonnenhof;Lebensmittel;14.62;DEBIT
+lena;L-0152;2026-09-22;Café Badstrasse;Gastronomie;18.99;DEBIT
+lena;L-0153;2026-09-25;Zahlung – besten Dank;Zahlung;1638.86;CREDIT
+lena;L-0154;2026-09-26;Café Badstrasse;Gastronomie;10.30;DEBIT
+lena;L-0155;2026-09-27;Migros Baden;Lebensmittel;91.93;DEBIT
+lena;L-0156;2026-09-30;Reisebüro Horizont;Reisen;364.15;DEBIT
+lena;L-0157;2026-09-30;SBB Online;Reisen;30.54;DEBIT
+lena;L-3001;2026-10-03;Möbelhaus Limmat;Shopping;500.00;DEBIT
+lena;L-3002;2026-10-07;Reisebüro Horizont;Reisen;500.05;DEBIT
+lena;L-3003;2026-10-10;Reisebüro Horizont Gutschrift;Reisen;750.00;CREDIT
+lena;L-3004;2026-10-13;Elektro Zentrum Baden;Elektronik;1200.00;DEBIT
+lena;L-3005;2026-10-15;Bäckerei Sonnenhof;Lebensmittel;12.40;DEBIT

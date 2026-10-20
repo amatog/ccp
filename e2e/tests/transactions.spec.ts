@@ -11,9 +11,11 @@ test.describe('Transaktionsübersicht', () => {
   test('listet die Transaktionen des Kunden, neueste zuerst', async ({ page }) => {
     await loginAndOpenTransactions(page, 'anna');
     const rows = page.getByTestId('transaction-row');
-    await expect(rows).toHaveCount(6);
+    await expect(rows).toHaveCount(155);
+    await expect(rows.first()).toHaveAttribute('data-transaction-id', 'A-1006');
     await expect(rows.first().getByTestId('tx-merchant')).toHaveText('Swisscom');
-    await expect(rows.last().getByTestId('tx-merchant')).toHaveText('Migros Zürich');
+    await expect(rows.last()).toHaveAttribute('data-transaction-id', 'A-0001');
+    await expect(rows.last().getByTestId('tx-date')).toHaveText('22.10.2025');
   });
 
   test('Belastungen sind negativ, Gutschriften positiv', async ({ page }) => {
@@ -26,13 +28,13 @@ test.describe('Transaktionsübersicht', () => {
 
   test('Saldo entspricht der Summe der Transaktionen', async ({ page }) => {
     await loginAndOpenTransactions(page, 'marco');
-    await expect(page.getByTestId('balance-total')).toHaveText('-488.90 CHF');
+    await expect(page.getByTestId('balance-total')).toHaveText("-1'040.68 CHF");
   });
 
   test('Kunden sehen nur ihre eigenen Transaktionen', async ({ page }) => {
     await loginAndOpenTransactions(page, 'marco');
     await expect(page.getByTestId('customer-name')).toHaveText('Marco Beispiel');
     await expect(page.getByTestId('transactions-table')).not.toContainText('Migros Zürich');
-    await expect(page.getByTestId('transaction-row')).toHaveCount(4);
+    await expect(page.getByTestId('transaction-row')).toHaveCount(146);
   });
 });

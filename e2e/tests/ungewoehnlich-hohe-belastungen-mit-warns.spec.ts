@@ -42,7 +42,7 @@ test.describe('CCP-13 Warnsymbol bei hohen Belastungen', () => {
 
   test('AK-5: Genau L-3002 und L-3004 sind markiert', async ({ page }) => {
     await loginAndOpenTransactions(page, 'lena');
-    await expect(page.getByTestId('transaction-row')).toHaveCount(5);
+    await expect(page.getByTestId('transaction-row')).toHaveCount(162);
     await expect(page.getByTestId('high-amount-warning')).toHaveCount(2);
     await expect(warningIn(page, 'L-3002')).toHaveCount(1);
     await expect(warningIn(page, 'L-3004')).toHaveCount(1);
@@ -83,8 +83,8 @@ test.describe('CCP-13 Warnsymbol bei hohen Belastungen', () => {
     await loginAndOpenTransactions(page, 'lena');
     await expect(page.getByTestId('customer-name')).toHaveText('Lena Probst');
     await expect(page.getByTestId('card-number')).toHaveText('**** **** **** 7070');
-    await expect(page.getByTestId('balance-total')).toHaveText("-1'462.45 CHF");
-    await expect(page.getByTestId('count-debits')).toHaveText('4 Belastungen');
-    await expect(page.getByTestId('count-credits')).toHaveText('1 Gutschrift');
+    await expect(page.getByTestId('balance-total')).toHaveText("-2'595.70 CHF");
+    await expect(page.getByTestId('count-debits')).toHaveText('146 Belastungen');
+    await expect(page.getByTestId('count-credits')).toHaveText('16 Gutschriften');
   });
 });
