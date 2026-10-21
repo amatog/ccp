@@ -464,3 +464,6 @@ lena;L-3002;2026-10-07;Reisebüro Horizont;Reisen;500.05;DEBIT
 lena;L-3003;2026-10-10;Reisebüro Horizont Gutschrift;Reisen;750.00;CREDIT
 lena;L-3004;2026-10-13;Elektro Zentrum Baden;Elektronik;1200.00;DEBIT
 lena;L-3005;2026-10-15;Bäckerei Sonnenhof;Lebensmittel;12.40;DEBIT
+nora;N-4001;2026-10-02;Bäckerei Sonnenhof;Lebensmittel;8.50;DEBIT
+nora;N-4002;2026-10-09;Bahnreisen Mittelland;Mobilität;64.00;DEBIT
+nora;N-4003;2026-10-12;Zahlung – besten Dank;Zahlung;50.00;CREDIT
