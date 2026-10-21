@@ -31,6 +31,7 @@ public class DemoDataRepository {
     private final Map<String, Customer> customers = Map.of(
             "anna", new Customer("anna", "Anna Muster", "**** **** **** 4242"),
             "marco", new Customer("marco", "Marco Beispiel", "**** **** **** 1881"),
+            "nora", new Customer("nora", "Nora Keller", "**** **** **** 5151"),
             "lena", new Customer("lena", "Lena Probst", "**** **** **** 7070"));
 
     private final Map<String, List<Transaction>> transactions = loadTransactions();
