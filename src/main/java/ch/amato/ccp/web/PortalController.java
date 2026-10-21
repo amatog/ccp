@@ -2,12 +2,15 @@ package ch.amato.ccp.web;
 
 import ch.amato.ccp.model.Transaction;
 import ch.amato.ccp.service.TransactionService;
+import ch.amato.ccp.service.LoginHistoryService;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -32,7 +35,7 @@ public class PortalController {
     }
 
     @GetMapping("/transactions")
-    public String transactions(Authentication authentication, Model model,
+    public String transactions(Authentication authentication, Model model, HttpSession session,
                                @RequestParam(defaultValue = "") String from,
                                @RequestParam(defaultValue = "") String to) {
         String username = authentication.getName();
@@ -52,6 +55,8 @@ public class PortalController {
             filterError = "Ungültiges Datum. Bitte im Format TT.MM.JJJJ wählen.";
         }
 
+        model.addAttribute("lastLogin", LastLoginFormatter.format(
+                (Instant) session.getAttribute(LoginHistoryService.PREVIOUS_LOGIN)));
         model.addAttribute("from", from);
         model.addAttribute("to", to);
         model.addAttribute("filterActive", filterActive);
