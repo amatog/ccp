@@ -51,13 +51,20 @@
             <input id="filter-from" type="date" name="from" th:value="${from}" data-testid="filter-from" />
             <label for="filter-to">Bis</label>
             <input id="filter-to" type="date" name="to" th:value="${to}" data-testid="filter-to" />
+            <label for="filter-category">Kategorie</label>
+            <select id="filter-category" name="category" data-testid="filter-category">
+                <option value="" th:selected="${category.isEmpty()}">Alle Kategorien</option>
+                <option th:each="option : ${categories}" th:value="${option}" th:text="${option}"
+                        th:selected="${option == category}"></option>
+            </select>
             <button type="submit" data-testid="filter-submit">Filtern</button>
             <a th:if="${filterActive}" th:href="@{/transactions}" data-testid="filter-reset">Zurücksetzen</a>
         </form>
         <p th:if="${filterError != null}" th:text="${filterError}" data-testid="filter-error" role="alert"></p>
         <p th:if="${filterValid and !#lists.isEmpty(transactions)}" data-testid="filter-summary"
-           th:text="|${#lists.size(transactions)} ${#lists.size(transactions) == 1 ? 'Transaktion' : 'Transaktionen'} im Zeitraum, Summe: ${@money.format(filterSum)} CHF|"></p>
-        <p th:if="${filterValid and #lists.isEmpty(transactions)}" data-testid="filter-no-results">
+           th:text="|${#lists.size(transactions)} ${#lists.size(transactions) == 1 ? 'Transaktion' : 'Transaktionen'} ${category.isEmpty() ? 'im Zeitraum' : 'in der Kategorie ' + category}, Summe: ${@money.format(filterSum)} CHF|"></p>
+        <p th:if="${filterValid and #lists.isEmpty(transactions)}" data-testid="filter-no-results"
+           th:text="${category.isEmpty() ? 'Keine Transaktionen im gewählten Zeitraum.' : 'Keine Transaktionen gefunden.'}">
             Keine Transaktionen im gewählten Zeitraum.
         </p>
         <p data-testid="transactions-empty" th:if="${!hasTransactions}">

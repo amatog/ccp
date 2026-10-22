@@ -14,6 +14,14 @@ import java.util.NoSuchElementException;
 @Service
 public class TransactionService {
 
+    private static final List<String> CATEGORIES = List.of(
+            "Elektronik", "Gastronomie", "Lebensmittel", "Mobilität",
+            "Reisen", "Shopping", "Telekom", "Zahlung");
+
+    public List<String> categories() {
+        return CATEGORIES;
+    }
+
     private final DemoDataRepository repository;
 
     public TransactionService(DemoDataRepository repository) {
@@ -32,7 +40,13 @@ public class TransactionService {
 
     /** Transaktionen innerhalb der optionalen, inklusiven Datumsgrenzen. */
     public List<Transaction> transactionsFor(String username, LocalDate from, LocalDate to) {
+        return transactionsFor(username, from, to, null);
+    }
+
+    /** Transaktionen mit optionaler Kategorie und inklusiven Datumsgrenzen. */
+    public List<Transaction> transactionsFor(String username, LocalDate from, LocalDate to, String category) {
         return repository.findTransactions(username).stream()
+                .filter(tx -> category == null || category.isEmpty() || tx.category().equals(category))
                 .filter(tx -> from == null || !tx.date().isBefore(from))
                 .filter(tx -> to == null || !tx.date().isAfter(to))
                 .sorted(Comparator.comparing(Transaction::date).reversed())

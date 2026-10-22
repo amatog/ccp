@@ -54,6 +54,47 @@ class TransactionServiceTest {
         assertThat(service.transactionCountLabel(mixedTransactions, type)).isEqualTo(expected);
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "anna, Elektronik, 7, A-1005, -1650.02",
+            "anna, Zahlung, 11, A-0148, 8904.51",
+            "marco, Mobilität, 30, M-2004, -1940.36",
+            "marco, Elektronik, 3, M-0122, -444.02"
+    })
+    void filtersCategoryForCustomer(String username, String category, int count, String first, String sum) {
+        List<Transaction> transactions = service.transactionsFor(username, null, null, category);
+        assertThat(transactions).hasSize(count).allSatisfy(tx -> {
+            assertThat(tx.category()).isEqualTo(category);
+            assertThat(tx.id()).startsWith(username.equals("anna") ? "A-" : "M-");
+        });
+        assertThat(transactions.get(0).id()).isEqualTo(first);
+        assertThat(service.balance(transactions)).isEqualByComparingTo(sum);
+        assertThat(transactions).extracting(Transaction::date).isSortedAccordingTo(java.util.Comparator.reverseOrder());
+        if (category.equals("Zahlung")) {
+            assertThat(transactions).extracting(Transaction::type).containsOnly(Transaction.Type.CREDIT);
+        }
+    }
+
+    @Test
+    void categoryAndInclusivePeriodWorkTogether() {
+        List<Transaction> transactions = service.transactionsFor("marco", LocalDate.of(2026, 10, 1),
+                LocalDate.of(2026, 10, 31), "Reisen");
+        assertThat(transactions).extracting(Transaction::id).containsExactly("M-2003", "M-2002");
+        assertThat(service.balance(transactions)).isEqualByComparingTo("-340.00");
+        assertThat(service.transactionsFor("anna", LocalDate.of(2026, 10, 1),
+                LocalDate.of(2026, 10, 10), "Elektronik")).isEmpty();
+    }
+
+    @Test
+    void categoryFilterPreservesExactOrderAndEmptyCategoryShowsAll() {
+        assertThat(service.transactionsFor("anna", null, null, "Elektronik"))
+                .extracting(Transaction::id)
+                .containsExactly("A-1005", "A-0137", "A-0087", "A-0072", "A-0032", "A-0020", "A-0015");
+        assertThat(service.transactionsFor("marco", null, null, "Elektronik"))
+                .extracting(Transaction::id).containsExactly("M-0122", "M-0114", "M-0020");
+        assertThat(service.transactionsFor("anna", null, null, "")).isEqualTo(service.transactionsFor("anna"));
+    }
+
     @Test
     void transactionsAreSortedNewestFirst() {
         List<Transaction> txs = service.transactionsFor("anna");

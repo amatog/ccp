@@ -37,19 +37,22 @@ public class PortalController {
     @GetMapping("/transactions")
     public String transactions(Authentication authentication, Model model, HttpSession session,
                                @RequestParam(defaultValue = "") String from,
-                               @RequestParam(defaultValue = "") String to) {
+                               @RequestParam(defaultValue = "") String to,
+                               @RequestParam(defaultValue = "") String category) {
         String username = authentication.getName();
         List<Transaction> allTransactions = transactionService.transactionsFor(username);
         List<Transaction> transactions = allTransactions;
-        boolean filterActive = !from.isEmpty() || !to.isEmpty();
+        boolean filterActive = !from.isEmpty() || !to.isEmpty() || !category.isEmpty();
         String filterError = null;
         try {
             LocalDate fromDate = from.isEmpty() ? null : LocalDate.parse(from);
             LocalDate toDate = to.isEmpty() ? null : LocalDate.parse(to);
             if (fromDate != null && toDate != null && fromDate.isAfter(toDate)) {
                 filterError = "Das Von-Datum darf nicht nach dem Bis-Datum liegen.";
+            } else if (!category.isEmpty() && !transactionService.categories().contains(category)) {
+                filterError = "Unbekannte Kategorie.";
             } else if (filterActive) {
-                transactions = transactionService.transactionsFor(username, fromDate, toDate);
+                transactions = transactionService.transactionsFor(username, fromDate, toDate, category);
             }
         } catch (DateTimeParseException exception) {
             filterError = "Ungültiges Datum. Bitte im Format TT.MM.JJJJ wählen.";
@@ -57,6 +60,8 @@ public class PortalController {
 
         model.addAttribute("lastLogin", LastLoginFormatter.format(
                 (Instant) session.getAttribute(LoginHistoryService.PREVIOUS_LOGIN)));
+        model.addAttribute("categories", transactionService.categories());
+        model.addAttribute("category", category);
         model.addAttribute("from", from);
         model.addAttribute("to", to);
         model.addAttribute("filterActive", filterActive);
