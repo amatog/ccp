@@ -1,5 +1,10 @@
 package ch.amato.ccp;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
@@ -7,15 +12,21 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrlPattern;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -27,6 +38,17 @@ class PortalControllerTest {
 
     @Autowired
     MockMvc mvc;
+
+    @MockBean
+    Clock clock;
+
+    @BeforeEach
+    void fixedExportClock() {
+        when(clock.instant()).thenReturn(Instant.parse("2026-10-21T22:30:00Z"));
+        when(clock.withZone(ZoneId.of("Europe/Zurich")))
+                .thenReturn(Clock.fixed(Instant.parse("2026-10-21T22:30:00Z"),
+                        ZoneId.of("Europe/Zurich")));
+    }
 
     @ParameterizedTest
     @CsvSource({
@@ -388,4 +410,121 @@ class PortalControllerTest {
                 .andExpect(xpath("//*[@data-testid='transaction-row'][starts-with(@data-transaction-id, 'A-')]")
                         .doesNotExist());
     }
+    @Test
+    @WithMockUser(username = "anna")
+    void exportHasExactOctoberContentAndDownloadHeaders() throws Exception {
+        String expected = "\uFEFFDatum;Händler;Kategorie;Betrag\r\n"
+                + "14.10.2026;Swisscom;Telekom;-65.00\r\n"
+                + "12.10.2026;Digitec Galaxus;Elektronik;-349.00\r\n"
+                + "09.10.2026;Restaurant Seeblick;Gastronomie;-118.50\r\n"
+                + "06.10.2026;Zalando Rückerstattung;Shopping;49.90\r\n"
+                + "04.10.2026;SBB Online;Reisen;-62.00\r\n"
+                + "02.10.2026;Migros Zürich;Lebensmittel;-84.35\r\n";
+        mvc.perform(get("/transactions/export").param("from", "2026-10-01").param("to", "2026-10-31"))
+                .andExpect(status().isOk())
+                .andExpect(header()
+                        .string("Content-Type", "text/csv;charset=UTF-8"))
+                .andExpect(header()
+                        .string("Content-Disposition", "attachment; filename=\"transaktionen_2026-10-22.csv\""))
+                .andExpect(header()
+                        .string("Cache-Control", "no-store"))
+                .andExpect(content().bytes(expected.getBytes(StandardCharsets.UTF_8)));
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "anna, , , , 155",
+            "marco, , , , 146",
+            "marco, Mobilität, , , 30",
+            "marco, Reisen, 2026-10-01, 2026-10-31, 2",
+            "lena, , 2026-10-01, 2026-10-31, 5",
+            "anna, Elektronik, 2026-10-01, 2026-10-10, 0",
+            "anna, Haustiere, , , 155",
+            "anna, Reisen, abc, , 155",
+            "anna, Reisen, 2026-10-31, 2026-10-01, 155",
+            "anna, , 2026-02-30, , 155"
+    })
+    void exportRowCountMatchesTableAndIgnoresRequestedUsername(String username, String category,
+                                                               String from, String to, int count) throws Exception {
+        String actual = mvc.perform(get("/transactions/export").with(user(username))
+                        .param("category", category == null ? "" : category)
+                        .param("from", from == null ? "" : from).param("to", to == null ? "" : to)
+                        .param("username", "lena"))
+                .andExpect(status().isOk()).andReturn().getResponse()
+                .getContentAsString(StandardCharsets.UTF_8);
+        assertEquals(count + 1, actual.split("\r\n").length);
+        mvc.perform(get("/transactions").with(user(username))
+                        .param("category", category == null ? "" : category)
+                        .param("from", from == null ? "" : from).param("to", to == null ? "" : to))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(count))
+                .andExpect(xpath("//*[@data-testid='export-csv'][@disabled]").nodeCount(count == 0 ? 1 : 0));
+        if ("Mobilität".equals(category)) {
+            assertTrue(actual.startsWith(
+                    "\uFEFFDatum;Händler;Kategorie;Betrag\r\n11.10.2026;Tankstelle Aare;Mobilität;-92.70\r\n"));
+        }
+        if ("marco".equals(username) && "Reisen".equals(category)) {
+            assertEquals("\uFEFFDatum;Händler;Kategorie;Betrag\r\n"
+                    + "08.10.2026;Hotel Alpenblick Gutschrift;Reisen;80.00\r\n"
+                    + "05.10.2026;Hotel Alpenblick;Reisen;-420.00\r\n", actual);
+        }
+        if ("lena".equals(username)) {
+            assertTrue(actual.contains(
+                    "13.10.2026;Elektro Zentrum Baden;Elektronik;-1200.00\r\n"));
+            assertTrue(actual.contains(
+                    "10.10.2026;Reisebüro Horizont Gutschrift;Reisen;750.00\r\n"));
+            assertFalse(actual.contains("CHF"));
+        }
+    }
+
+    @Test
+    @WithMockUser(username = "marco")
+    void exportFormPreservesFiltersAndPageAfterDownload() throws Exception {
+        var page = get("/transactions").param("from", "2026-10-01")
+                .param("to", "2026-10-31").param("category", "Reisen");
+        mvc.perform(page)
+                .andExpect(xpath("//*[@data-testid='filter-form']/following-sibling::*[1][@data-testid='export-form']")
+                        .exists())
+                .andExpect(xpath("//*[@data-testid='export-form']/@method").string("get"))
+                .andExpect(xpath("//*[@data-testid='export-form']/@action").string("/transactions/export"))
+                .andExpect(xpath("//*[@data-testid='export-form']/input[@name='from']/@value").string("2026-10-01"))
+                .andExpect(xpath("//*[@data-testid='export-form']/input[@name='to']/@value").string("2026-10-31"))
+                .andExpect(xpath("//*[@data-testid='export-form']/input[@name='category']/@value").string("Reisen"))
+                .andExpect(xpath("//*[@data-testid='export-csv']").string("Als CSV exportieren"))
+                .andExpect(xpath("//*[@data-testid='filter-category']/option[@selected]/@value").string("Reisen"))
+                .andExpect(xpath("//*[@data-testid='filter-summary']")
+                        .string("2 Transaktionen in der Kategorie Reisen, Summe: -340.00 CHF"));
+        mvc.perform(get("/transactions/export").param("from", "2026-10-01")
+                .param("to", "2026-10-31").param("category", "Reisen")).andExpect(status().isOk());
+        mvc.perform(page)
+                .andExpect(xpath("//*[@data-testid='filter-category']/option[@selected]/@value").string("Reisen"))
+                .andExpect(xpath("//*[@data-testid='filter-from']/@value").string("2026-10-01"))
+                .andExpect(xpath("//*[@data-testid='filter-to']/@value").string("2026-10-31"))
+                .andExpect(xpath("//*[@data-testid='filter-summary']")
+                        .string("2 Transaktionen in der Kategorie Reisen, Summe: -340.00 CHF"));
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
+    void emptyExportHasOnlyHeaderAndDisabledButtonHasTooltip() throws Exception {
+        mvc.perform(get("/transactions").param("from", "2026-10-01")
+                        .param("to", "2026-10-10").param("category", "Elektronik"))
+                .andExpect(xpath("//*[@data-testid='filter-no-results']").exists())
+                .andExpect(xpath("//*[@data-testid='export-csv'][@disabled]/@title")
+                        .string("Keine Transaktionen zum Exportieren"));
+        mvc.perform(get("/transactions/export").param("from", "2026-10-01")
+                        .param("to", "2026-10-10").param("category", "Elektronik"))
+                .andExpect(status().isOk())
+                .andExpect(content().bytes("\uFEFFDatum;Händler;Kategorie;Betrag\r\n"
+                        .getBytes(StandardCharsets.UTF_8)));
+    }
+
+    @Test
+    void unauthenticatedExportRedirectsToLoginWithoutFile() throws Exception {
+        mvc.perform(get("/transactions/export"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/login"))
+                .andExpect(header()
+                        .doesNotExist("Content-Disposition"));
+    }
+
 }
