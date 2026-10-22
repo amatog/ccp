@@ -60,6 +60,14 @@
             <button type="submit" data-testid="filter-submit">Filtern</button>
             <a th:if="${filterActive}" th:href="@{/transactions}" data-testid="filter-reset">Zurücksetzen</a>
         </form>
+        <form method="get" th:action="@{/transactions/export}" data-testid="export-form">
+            <input type="hidden" name="from" th:value="${from}" />
+            <input type="hidden" name="to" th:value="${to}" />
+            <input type="hidden" name="category" th:value="${category}" />
+            <button type="submit" data-testid="export-csv"
+                    th:disabled="${#lists.isEmpty(transactions)}"
+                    th:title="${#lists.isEmpty(transactions)} ? 'Keine Transaktionen zum Exportieren' : null">Als CSV exportieren</button>
+        </form>
         <p th:if="${filterError != null}" th:text="${filterError}" data-testid="filter-error" role="alert"></p>
         <p th:if="${filterValid and !#lists.isEmpty(transactions)}" data-testid="filter-summary"
            th:text="|${#lists.size(transactions)} ${#lists.size(transactions) == 1 ? 'Transaktion' : 'Transaktionen'} ${category.isEmpty() ? 'im Zeitraum' : 'in der Kategorie ' + category}, Summe: ${@money.format(filterSum)} CHF|"></p>
