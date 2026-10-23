@@ -38,6 +38,14 @@
                 <span data-testid="count-credits" th:text="${creditCountLabel}">0 Gutschriften</span>
             </div>
         </div>
+        <div data-testid="period-totals">
+            <div class="label">Summen</div>
+            <div class="value">
+                Belastungen <span data-testid="sum-debits" th:text="|${@money.format(sumDebits)} CHF|">0.00 CHF</span>
+                · Gutschriften <span data-testid="sum-credits" th:text="|${@money.format(sumCredits)} CHF|">0.00 CHF</span>
+                · Saldo im Zeitraum <span data-testid="sum-net" th:text="|${@money.format(sumNet)} CHF|">0.00 CHF</span>
+            </div>
+        </div>
         <div>
             <div class="label">Letzte Anmeldung</div>
             <div class="value" data-testid="last-login" th:text="${lastLogin}">Erste Anmeldung</div>

@@ -299,6 +299,68 @@ class PortalControllerTest {
                 .andExpect(xpath("//*[@data-testid='balance-total']").string("-1'382.07 CHF"));
     }
 
+    @ParameterizedTest
+    @CsvSource({
+            "anna, , , , 10386.51, 9004.44, 1382.07, 155",
+            "anna, 2026-10-01, 2026-10-31, , 678.85, 49.90, 628.95, 6",
+            "marco, 2026-10-01, 2026-10-05, , 476.20, 0.00, 476.20, 2",
+            "anna, 2026-10-06, 2026-10-06, , 0.00, 49.90, -49.90, 1",
+            "lena, 2026-10-01, 2026-10-31, , 2212.45, 750.00, 1462.45, 5",
+            "anna, 2026-10-15, 2026-10-20, , 0.00, 0.00, 0.00, 0",
+            "lena, 2026-10-01, 2026-10-31, Reisen, 500.05, 750.00, -249.95, 2"
+    })
+    void periodTotalsMatchDisplayedTransactions(String username, String from, String to, String category,
+                                               String debits, String credits, String net, int count) throws Exception {
+        var money = new ch.amato.ccp.web.MoneyFormatter();
+        String totals = "//*[@data-testid='account-summary']/*[@data-testid='period-totals']";
+        mvc.perform(get("/transactions").with(user(username))
+                        .param("from", from == null ? "" : from).param("to", to == null ? "" : to)
+                        .param("category", category == null ? "" : category))
+                .andExpect(status().isOk())
+                .andExpect(xpath(totals + "/*[@class='label']").string("Summen"))
+                .andExpect(xpath(totals + "/*[@class='value']/*[@data-testid='sum-debits']")
+                        .string(money.format(new java.math.BigDecimal(debits)) + " CHF"))
+                .andExpect(xpath(totals + "/*[@class='value']/*[@data-testid='sum-credits']")
+                        .string(money.format(new java.math.BigDecimal(credits)) + " CHF"))
+                .andExpect(xpath(totals + "/*[@class='value']/*[@data-testid='sum-net']")
+                        .string(money.format(new java.math.BigDecimal(net)) + " CHF"))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(count))
+                .andExpect(xpath("//*[@data-testid='transaction-counts']/following-sibling::*[1]"
+                        + "[@data-testid='period-totals']/following-sibling::*[1]/*[@data-testid='last-login']")
+                        .exists());
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
+    void octoberTotalsPreserveWholeAccountValuesAndResetToAllTotals() throws Exception {
+        mvc.perform(get("/transactions").param("from", "2026-10-01").param("to", "2026-10-31"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='sum-debits']").string("678.85 CHF"))
+                .andExpect(xpath("//*[@data-testid='sum-credits']").string("49.90 CHF"))
+                .andExpect(xpath("//*[@data-testid='sum-net']").string("628.95 CHF"))
+                .andExpect(xpath("//*[@data-testid='balance-total']").string("-1'382.07 CHF"))
+                .andExpect(xpath("//*[@data-testid='count-debits']").string("142 Belastungen"))
+                .andExpect(xpath("//*[@data-testid='count-credits']").string("13 Gutschriften"))
+                .andExpect(xpath("//*[@data-testid='filter-reset']/@href").string("/transactions"));
+        mvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='sum-debits']").string("10'386.51 CHF"))
+                .andExpect(xpath("//*[@data-testid='sum-credits']").string("9'004.44 CHF"))
+                .andExpect(xpath("//*[@data-testid='sum-net']").string("1'382.07 CHF"));
+    }
+
+    @Test
+    @WithMockUser(username = "marco")
+    void invalidPeriodTotalsUseWholeAccount() throws Exception {
+        mvc.perform(get("/transactions").param("from", "2026-10-10").param("to", "2026-10-01"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='filter-error']").exists())
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(146))
+                .andExpect(xpath("//*[@data-testid='sum-debits']").string("10'619.48 CHF"))
+                .andExpect(xpath("//*[@data-testid='sum-credits']").string("9'578.80 CHF"))
+                .andExpect(xpath("//*[@data-testid='sum-net']").string("1'040.68 CHF"));
+    }
+
     @Test
     void unauthenticatedUserIsRedirectedToLogin() throws Exception {
         mvc.perform(get("/transactions"))
