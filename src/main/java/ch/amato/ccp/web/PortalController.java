@@ -68,6 +68,9 @@ public class PortalController {
         model.addAttribute("hasTransactions", !allTransactions.isEmpty());
         model.addAttribute("customer", transactionService.customer(username));
         model.addAttribute("transactions", transactions);
+        model.addAttribute("sumDebits", transactionService.total(transactions, Transaction.Type.DEBIT));
+        model.addAttribute("sumCredits", transactionService.total(transactions, Transaction.Type.CREDIT));
+        model.addAttribute("sumNet", transactionService.netSpending(transactions));
         model.addAttribute("balance", transactionService.balance(allTransactions));
         model.addAttribute("debitCountLabel",
                 transactionService.transactionCountLabel(allTransactions, Transaction.Type.DEBIT));

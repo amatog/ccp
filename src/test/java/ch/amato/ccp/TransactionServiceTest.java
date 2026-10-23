@@ -114,6 +114,38 @@ class TransactionServiceTest {
     }
 
     @Test
+    void periodTotalsFollowCoreRule() {
+        List<Transaction> transactions = List.of(
+                transaction("1000.00", Transaction.Type.DEBIT),
+                transaction("250.00", Transaction.Type.DEBIT),
+                transaction("150.00", Transaction.Type.CREDIT),
+                transaction("50.00", Transaction.Type.CREDIT));
+        assertThat(service.total(transactions, Transaction.Type.DEBIT)).isEqualByComparingTo("1250.00");
+        assertThat(service.total(transactions, Transaction.Type.CREDIT)).isEqualByComparingTo("200.00");
+        assertThat(service.netSpending(transactions)).isEqualByComparingTo("1050.00");
+    }
+
+    @Test
+    void emptyPeriodTotalsAreZero() {
+        assertThat(service.total(List.of(), Transaction.Type.DEBIT)).isEqualTo(new BigDecimal("0.00"));
+        assertThat(service.total(List.of(), Transaction.Type.CREDIT)).isEqualTo(new BigDecimal("0.00"));
+        assertThat(service.netSpending(List.of())).isEqualTo(new BigDecimal("0.00"));
+    }
+
+    @Test
+    void creditOnlyPeriodHasNegativeNetSpending() {
+        List<Transaction> transactions = List.of(transaction("49.90", Transaction.Type.CREDIT));
+        assertThat(service.total(transactions, Transaction.Type.DEBIT)).isEqualByComparingTo("0.00");
+        assertThat(service.total(transactions, Transaction.Type.CREDIT)).isEqualByComparingTo("49.90");
+        assertThat(service.netSpending(transactions)).isEqualByComparingTo("-49.90");
+    }
+
+    private Transaction transaction(String amount, Transaction.Type type) {
+        return new Transaction("test", LocalDate.of(2026, 10, 6), "Testhändler", "Shopping",
+                new BigDecimal(amount), "CHF", type);
+    }
+
+    @Test
     void unknownCustomerHasNoTransactions() {
         assertThat(service.transactionsFor("niemand")).isEmpty();
     }

@@ -106,7 +106,7 @@ class LastLoginControllerTest {
         mvc.perform(get("/transactions").session(second))
                 .andExpect(status().isOk())
                 .andExpect(xpath(LAST_LOGIN).string("20.10.2026, 15:42"))
-                .andExpect(xpath("//*[@data-testid='transaction-counts']/following-sibling::*[1]/*[@class='label']")
+                .andExpect(xpath("//*[@data-testid='period-totals']/following-sibling::*[1]/*[@class='label']")
                         .string("Letzte Anmeldung"))
                 .andExpect(xpath("//*[@data-testid='customer-name']").string("Nora Keller"))
                 .andExpect(xpath("//*[@data-testid='card-number']").string("**** **** **** 5151"))

@@ -63,6 +63,20 @@ public class TransactionService {
         return count + " " + label;
     }
 
+    /** Positive Summe eines Buchungstyps in der aktuellen Auswahl. */
+    public BigDecimal total(List<Transaction> transactions, Transaction.Type type) {
+        return transactions.stream()
+                .filter(tx -> tx.type() == type)
+                .map(Transaction::amount)
+                .reduce(new BigDecimal("0.00"), BigDecimal::add);
+    }
+
+    /** Ausgaben in der aktuellen Auswahl (Belastungen minus Gutschriften). */
+    public BigDecimal netSpending(List<Transaction> transactions) {
+        return total(transactions, Transaction.Type.DEBIT)
+                .subtract(total(transactions, Transaction.Type.CREDIT));
+    }
+
     /** Saldo aller Transaktionen (Gutschriften minus Belastungen). */
     public BigDecimal balance(List<Transaction> transactions) {
         return transactions.stream()
