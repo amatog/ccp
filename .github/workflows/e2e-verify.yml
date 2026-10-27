@@ -69,11 +69,20 @@ jobs:
           done
           cat "$RUNNER_TEMP/app.log"; exit 1
 
+      - name: Playwright-Browser aus dem Cache holen
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('e2e/package-lock.json') }}
+
       - name: Playwright einrichten
         working-directory: e2e
         run: |
           npm ci
-          npx playwright install --with-deps chromium
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" != "true" ]; then npx playwright install chromium; fi
+          # Systempakete sind auf ubuntu-latest vorhanden; apt nur als Rückfall, falls Chromium nicht startet.
+          node -e "require('@playwright/test').chromium.launch().then(b => b.close())" || npx playwright install-deps chromium
 
       - name: TypeScript prüfen
         id: tsc
