@@ -82,6 +82,13 @@ jobs:
           cache: npm
           cache-dependency-path: e2e/package-lock.json
 
+      - name: Playwright-Browser aus dem Cache holen
+        id: pw-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('e2e/package-lock.json') }}
+
       - name: Playwright-Tests gegen den VPS
         id: playwright
         working-directory: e2e
@@ -89,7 +96,9 @@ jobs:
           BASE_URL: http://${{ secrets.VPS_HOST }}:${{ env.APP_PORT }}
         run: |
           npm ci
-          npx playwright install --with-deps chromium
+          if [ "${{ steps.pw-cache.outputs.cache-hit }}" != "true" ]; then npx playwright install chromium; fi
+          # Systempakete sind auf ubuntu-latest vorhanden; apt nur als Rückfall, falls Chromium nicht startet.
+          node -e "require('@playwright/test').chromium.launch().then(b => b.close())" || npx playwright install-deps chromium
           npx playwright test
 
       - name: Playwright-Report hochladen
