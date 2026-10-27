@@ -375,6 +375,26 @@ class PortalControllerTest {
     }
 
     @Test
+    void loginShowsCopyrightFooterAtEndOfPage() throws Exception {
+        String page = mvc.perform(get("/login"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertEquals(1, page.split("<footer", -1).length - 1);
+        assertTrue(page.matches("(?s).*<footer data-testid=\"copyright-footer\">"
+                + "© 2026 Credit Card Portal</footer>\\s*</body>\\s*</html>\\s*"));
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
+    void transactionsShowCopyrightFooterAtEndOfPage() throws Exception {
+        mvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//footer").nodeCount(1))
+                .andExpect(xpath("/html/body/*[last()][self::footer][@data-testid='copyright-footer']")
+                        .string("© 2026 Credit Card Portal"));
+    }
+
+    @Test
     void loginWithWrongPasswordFails() throws Exception {
         mvc.perform(formLogin("/login").user("anna").password("falsch"))
                 .andExpect(redirectedUrl("/login?error"));

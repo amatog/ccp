@@ -31,6 +31,13 @@ header h1 { margin: 0; font-size: 1.2rem; }
 
 main { max-width: 960px; margin: 24px auto; padding: 0 16px; }
 
+footer {
+    padding: 16px;
+    color: var(--muted);
+    font-size: .8rem;
+    text-align: center;
+}
+
 .card {
     background: var(--surface);
     border: 1px solid var(--border);
