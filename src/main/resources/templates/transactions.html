@@ -15,6 +15,7 @@
 </header>
 
 <main>
+    <h2 data-testid="greeting" th:text="|Guten Tag, ${customer.fullName.split(' ')[0]}|">Guten Tag, Anna</h2>
     <section class="card summary" data-testid="account-summary">
         <div>
             <div class="label">Karteninhaber</div>

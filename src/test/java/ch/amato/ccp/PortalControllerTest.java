@@ -52,6 +52,37 @@ class PortalControllerTest {
 
     @ParameterizedTest
     @CsvSource({
+            "anna, Anna, Anna Muster",
+            "marco, Marco, Marco Beispiel",
+            "lena, Lena, Lena Probst"
+    })
+    void greetingUsesAuthenticatedCustomersFirstName(String username, String firstName, String fullName)
+            throws Exception {
+        mvc.perform(get("/transactions").with(user(username)).param("username", "lena"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//main/*[@data-testid='greeting']").string("Guten Tag, " + firstName))
+                .andExpect(xpath("//main/*[@data-testid='greeting']/following-sibling::*[1]"
+                        + "[@data-testid='account-summary']").exists())
+                .andExpect(xpath("//*[@data-testid='customer-name']").string(fullName));
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
+    void greetingRemainsWhenFilteringAndResetting() throws Exception {
+        mvc.perform(get("/transactions").param("from", "2026-10-01"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//main/*[@data-testid='greeting']").string("Guten Tag, Anna"))
+                .andExpect(xpath("//*[@data-testid='customer-name']").string("Anna Muster"))
+                .andExpect(xpath("//*[@data-testid='filter-reset']/@href").string("/transactions"));
+        mvc.perform(get("/transactions"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//main/*[@data-testid='greeting']").string("Guten Tag, Anna"))
+                .andExpect(xpath("//*[@data-testid='customer-name']").string("Anna Muster"))
+                .andExpect(xpath("//*[@data-testid='filter-reset']").doesNotExist());
+    }
+
+    @ParameterizedTest
+    @CsvSource({
             "anna, Elektronik, , , 7, '7 Transaktionen in der Kategorie Elektronik, Summe: -1’650.02 CHF'",
             "anna, Zahlung, , , 11, '11 Transaktionen in der Kategorie Zahlung, Summe: 8’904.51 CHF'",
             "marco, Mobilität, , , 30, '30 Transaktionen in der Kategorie Mobilität, Summe: -1’940.36 CHF'",
