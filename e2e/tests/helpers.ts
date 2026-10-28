@@ -15,4 +15,7 @@ export async function loginAndOpenTransactions(page: Page, username: string) {
   await login(page, username);
   await expect(page).toHaveURL(/\/transactions$/);
   await expect(page.getByTestId('transactions-table')).toBeVisible();
+  // Bei langsamer Verbindung (Tests gegen den Server) ist die Tabelle sichtbar, bevor die
+  // Skripte am Seitenende geladen sind. Erst danach reagiert die Seite auf Eingaben.
+  await page.waitForLoadState('load');
 }

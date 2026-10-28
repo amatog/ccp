@@ -137,7 +137,7 @@
         const count = document.querySelector('[data-testid="merchant-search-count"]');
         const noResults = document.querySelector('[data-testid="merchant-search-no-results"]');
 
-        search.addEventListener('input', () => {
+        const applySearch = () => {
             const term = search.value.trim().toLocaleLowerCase('de-CH');
             let matches = 0;
             rows.forEach(row => {
@@ -149,7 +149,12 @@
             noResults.hidden = matches !== 0;
             count.hidden = term === '' || matches === 0;
             count.textContent = count.hidden ? '' : `${matches} Treffer`;
-        });
+        };
+
+        search.addEventListener('input', applySearch);
+        // Eingaben, die vor dem Laden dieses Skripts gemacht wurden (langsame Verbindung,
+        // Zurück-Navigation), sofort anwenden – sonst bliebe die Suche wirkungslos.
+        if (search.value.trim() !== '') applySearch();
     })();
 </script>
 </body>
