@@ -51,6 +51,52 @@ class PortalControllerTest {
     }
 
     @ParameterizedTest
+    @CsvSource({"anna, , , 155", "anna, 2026-10-01, , 6", "marco, , Lebensmittel, 47"})
+    void merchantSearchStartsEmptyOutsideFormsOnLoadedRows(String username, String from,
+                                                          String category, int rows) throws Exception {
+        mvc.perform(get("/transactions").with(user(username))
+                        .param("from", from == null ? "" : from)
+                        .param("category", category == null ? "" : category))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(rows))
+                .andExpect(xpath("//*[@data-testid='transaction-row'][@hidden]").doesNotExist())
+                .andExpect(xpath("//*[@data-testid='transactions-table'][@hidden]").doesNotExist())
+                .andExpect(xpath("//label[@for='merchant-search']").string("Händler suchen"))
+                .andExpect(xpath("//input[@id='merchant-search' and @type='search'"
+                        + " and @data-testid='merchant-search' and @placeholder='z. B. Migros']").exists())
+                .andExpect(xpath("//*[@data-testid='merchant-search'][@value!='' or @name or @form]")
+                        .doesNotExist())
+                .andExpect(xpath("//form//*[@data-testid='merchant-search']").doesNotExist())
+                .andExpect(xpath("//*[@data-testid='merchant-search-count'][@hidden]").exists())
+                .andExpect(xpath("//*[@data-testid='merchant-search-no-results'][@hidden"
+                        + " and @role='status' and @aria-live='polite']").exists())
+                .andExpect(xpath("normalize-space(//*[@data-testid='merchant-search-no-results'])")
+                        .string("Keine Transaktionen gefunden."));
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
+    void merchantSearchIsAbsentWithoutServerFilteredRows() throws Exception {
+        mvc.perform(get("/transactions").param("from", "2026-10-01")
+                        .param("to", "2026-10-10").param("category", "Elektronik"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='transactions-table']").doesNotExist())
+                .andExpect(xpath("//*[@data-testid='merchant-search']").doesNotExist())
+                .andExpect(xpath("//*[@data-testid='merchant-search-count']").doesNotExist())
+                .andExpect(xpath("//*[@data-testid='merchant-search-no-results']").doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
+    void merchantSearchIsNotPopulatedOrAppliedFromRequestParameters() throws Exception {
+        mvc.perform(get("/transactions").param("merchant-search", "migros"))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(155))
+                .andExpect(xpath("//*[@data-testid='merchant-search']/@value").doesNotExist())
+                .andExpect(xpath("//*[@data-testid='merchant-search-count'][@hidden]").exists());
+    }
+
+    @ParameterizedTest
     @CsvSource({
             "anna, Elektronik, , , 7, '7 Transaktionen in der Kategorie Elektronik, Summe: -1’650.02 CHF'",
             "anna, Zahlung, , , 11, '11 Transaktionen in der Kategorie Zahlung, Summe: 8’904.51 CHF'",

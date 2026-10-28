@@ -87,6 +87,13 @@
             Keine Transaktionen vorhanden.
         </p>
         <div class="table-wrap" th:unless="${#lists.isEmpty(transactions)}">
+            <label for="merchant-search">Händler suchen</label>
+            <input type="search" id="merchant-search" data-testid="merchant-search"
+                   placeholder="z. B. Migros" autocomplete="off" />
+            <p data-testid="merchant-search-count" hidden="hidden"></p>
+            <p data-testid="merchant-search-no-results" role="status" aria-live="polite" hidden="hidden">
+                Keine Transaktionen gefunden.
+            </p>
             <table data-testid="transactions-table">
                 <thead>
                 <tr>
@@ -120,5 +127,30 @@
         </div>
     </section>
 </main>
+<script>
+    (() => {
+        const search = document.getElementById('merchant-search');
+        if (!search) return;
+
+        const table = document.querySelector('[data-testid="transactions-table"]');
+        const rows = Array.from(table.querySelectorAll('[data-testid="transaction-row"]'));
+        const count = document.querySelector('[data-testid="merchant-search-count"]');
+        const noResults = document.querySelector('[data-testid="merchant-search-no-results"]');
+
+        search.addEventListener('input', () => {
+            const term = search.value.trim().toLocaleLowerCase('de-CH');
+            let matches = 0;
+            rows.forEach(row => {
+                const merchant = row.querySelector('[data-testid="tx-merchant"]').textContent;
+                row.hidden = !merchant.toLocaleLowerCase('de-CH').includes(term);
+                if (!row.hidden) matches++;
+            });
+            table.hidden = matches === 0;
+            noResults.hidden = matches !== 0;
+            count.hidden = term === '' || matches === 0;
+            count.textContent = count.hidden ? '' : `${matches} Treffer`;
+        });
+    })();
+</script>
 </body>
 </html>
