@@ -1,6 +1,7 @@
 package ch.amato.ccp.web;
 
 import ch.amato.ccp.model.Transaction;
+import ch.amato.ccp.service.DisputeService;
 import ch.amato.ccp.service.TransactionService;
 import ch.amato.ccp.service.TransactionCsvExporter;
 import org.springframework.http.HttpHeaders;
@@ -26,11 +27,13 @@ public class PortalController {
     private final TransactionService transactionService;
     private final TransactionCsvExporter csvExporter;
     private final Clock clock;
+    private final DisputeService disputeService;
 
-    public PortalController(TransactionService transactionService, TransactionCsvExporter csvExporter, Clock clock) {
+    public PortalController(TransactionService transactionService, TransactionCsvExporter csvExporter, Clock clock, DisputeService disputeService) {
         this.transactionService = transactionService;
         this.csvExporter = csvExporter;
         this.clock = clock;
+        this.disputeService = disputeService;
     }
 
     @GetMapping("/")
@@ -48,6 +51,7 @@ public class PortalController {
                                @RequestParam(defaultValue = "") String from,
                                @RequestParam(defaultValue = "") String to,
                                @RequestParam(defaultValue = "") String category) {
+        model.addAttribute("disputedIds", disputeService.disputedIds(session));
         String username = authentication.getName();
         Selection selection = selectTransactions(username, from, to, category);
         List<Transaction> allTransactions = selection.allTransactions();

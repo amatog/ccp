@@ -99,3 +99,17 @@ td.amount, th.amount { text-align: right; font-variant-numeric: tabular-nums; }
 .badge--telekom { background-color: #CFFAFE; color: #155E75; }
 .badge--mobilitaet { background-color: #FEF9C3; color: #854D0E; }
 .badge--andere { background-color: #F3F4F6; color: #374151; }
+
+textarea {
+    display: block;
+    width: 100%;
+    min-height: 100px;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font: inherit;
+}
+
+button:disabled { opacity: .5; cursor: not-allowed; }
+
+.badge--dispute { background-color: #DBEAFE; color: #1E40AF; }

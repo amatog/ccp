@@ -54,6 +54,8 @@
 
     <section class="card">
         <h2>Transaktionen</h2>
+        <p th:if="${disputeSuccess != null}" th:text="${disputeSuccess}" data-testid="dispute-success" role="status" class="alert info"></p>
+        <p th:if="${disputeError != null}" th:text="${disputeError}" data-testid="dispute-error" role="alert" class="alert error"></p>
         <form method="get" th:action="@{/transactions}" data-testid="filter-form">
             <label for="filter-from">Von</label>
             <input id="filter-from" type="date" name="from" th:value="${from}" data-testid="filter-from" />
@@ -101,6 +103,7 @@
                     <th>Händler</th>
                     <th>Kategorie</th>
                     <th class="amount">Betrag</th>
+                    <th>Status</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -120,6 +123,15 @@
                               class="high-amount-warning" role="img"
                               title="Hoher Betrag – bitte prüfen" aria-label="Hoher Betrag – bitte prüfen">⚠</span>
                         <span th:text="|${@money.format(tx.signedAmount())} ${tx.currency}|">0.00 CHF</span>
+                    </td>
+                    <td>
+                        <th:block th:if="${tx.type.name() == 'DEBIT'}">
+                            <span th:if="${disputedIds.contains(tx.id)}" class="badge badge--dispute"
+                                  data-testid="dispute-status">In Abklärung</span>
+                            <a th:unless="${disputedIds.contains(tx.id)}" data-testid="dispute-button"
+                               th:href="@{/transactions/{id}/dispute(id=${tx.id},from=${from},to=${to},category=${category})}"
+                               th:attr="aria-label=|Transaktion ${tx.merchant} vom ${#temporals.format(tx.date, 'dd.MM.yyyy')} beanstanden|">Beanstanden</a>
+                        </th:block>
                     </td>
                 </tr>
                 </tbody>
