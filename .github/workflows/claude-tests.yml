@@ -40,7 +40,7 @@ env:
 
 jobs:
   prepare:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: read
@@ -148,7 +148,7 @@ jobs:
   publish:
     needs: [prepare, generate, verify, fix, verify2]
     if: always() && needs.prepare.result == 'success'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
       contents: write        # Tests auf den PR-Branch pushen
