@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="de" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Transaktion beanstanden</title>
+    <link rel="stylesheet" th:href="@{/css/portal.css}" />
+</head>
+<body>
+<header><h1>Credit Card Portal</h1></header>
+<main>
+    <section class="card">
+        <h2>Transaktion beanstanden</h2>
+        <p data-testid="dispute-transaction"
+           th:text="|${#temporals.format(transaction.date, 'dd.MM.yyyy')} · ${transaction.merchant} · ${@money.format(transaction.signedAmount())} CHF|"></p>
+        <form method="post" th:action="@{/transactions/{id}/dispute(id=${transaction.id})}" data-testid="dispute-form">
+            <input type="hidden" name="from" th:value="${from}" />
+            <input type="hidden" name="to" th:value="${to}" />
+            <input type="hidden" name="category" th:value="${category}" />
+            <label for="dispute-reason">Grund</label>
+            <select id="dispute-reason" name="reason" required="required" data-testid="dispute-reason"
+                    th:attr="aria-invalid=${reasonError != null},aria-describedby=${reasonError != null ? 'dispute-reason-error' : null}">
+                <option value="" th:selected="${reason == null}">Bitte Grund wählen</option>
+                <option th:each="option : ${reasons}" th:value="${option.name()}"
+                        th:text="${option.label}" th:selected="${option == reason}"></option>
+            </select>
+            <p id="dispute-reason-error" th:if="${reasonError != null}" th:text="${reasonError}"
+               data-testid="dispute-reason-error" role="alert"></p>
+            <label for="dispute-comment">Kommentar (optional)</label>
+            <textarea id="dispute-comment" name="comment" maxlength="500" data-testid="dispute-comment"
+                      th:text="${comment}"
+                      th:attr="aria-invalid=${commentError != null},aria-describedby=${commentError != null ? 'dispute-comment-error' : null}"></textarea>
+            <p id="dispute-comment-error" th:if="${commentError != null}" th:text="${commentError}"
+               data-testid="dispute-comment-error" role="alert"></p>
+            <button type="submit" data-testid="dispute-submit" th:disabled="${reason == null}">Beanstandung absenden</button>
+            <a data-testid="dispute-cancel" th:href="@{/transactions(from=${from},to=${to},category=${category})}">Abbrechen</a>
+        </form>
+    </section>
+</main>
+<script>
+    (() => {
+        const reason = document.getElementById('dispute-reason');
+        const submit = document.querySelector('[data-testid="dispute-submit"]');
+        const update = () => { submit.disabled = reason.value === ''; };
+        reason.addEventListener('change', update);
+        update();
+    })();
+</script>
+</body>
+</html>
