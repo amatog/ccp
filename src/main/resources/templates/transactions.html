@@ -80,7 +80,7 @@
         </form>
         <p th:if="${filterError != null}" th:text="${filterError}" data-testid="filter-error" role="alert"></p>
         <p th:if="${filterValid and !#lists.isEmpty(transactions)}" data-testid="filter-summary"
-           th:text="|${#lists.size(transactions)} ${#lists.size(transactions) == 1 ? 'Transaktion' : 'Transaktionen'} ${category.isEmpty() ? 'im Zeitraum' : 'in der Kategorie ' + category}, Summe: ${@money.format(filterSum)} CHF|"></p>
+           th:text="|${selectionCount} ${selectionCount == 1 ? 'Transaktion' : 'Transaktionen'} ${category.isEmpty() ? 'im Zeitraum' : 'in der Kategorie ' + category}, Summe: ${@money.format(filterSum)} CHF|"></p>
         <p th:if="${filterValid and #lists.isEmpty(transactions)}" data-testid="filter-no-results"
            th:text="${category.isEmpty() ? 'Keine Transaktionen im gewählten Zeitraum.' : 'Keine Transaktionen gefunden.'}">
             Keine Transaktionen im gewählten Zeitraum.
@@ -136,6 +136,19 @@
                 </tr>
                 </tbody>
             </table>
+            <nav th:if="${totalPages > 1}" aria-label="Seitennavigation" data-testid="pagination">
+                <form method="get" th:action="@{/transactions}">
+                    <input type="hidden" name="from" th:value="${from}" />
+                    <input type="hidden" name="to" th:value="${to}" />
+                    <input type="hidden" name="category" th:value="${category}" />
+                    <button type="submit" name="page" th:value="${currentPage - 1}"
+                            th:disabled="${currentPage == 1}" data-testid="pagination-prev">Zurück</button>
+                    <span data-testid="pagination-info" aria-live="polite"
+                          th:text="|Seite ${currentPage} von ${totalPages}|">Seite 1 von 1</span>
+                    <button type="submit" name="page" th:value="${currentPage + 1}"
+                            th:disabled="${currentPage == totalPages}" data-testid="pagination-next">Weiter</button>
+                </form>
+            </nav>
         </div>
     </section>
 </main>

@@ -51,6 +51,118 @@ class PortalControllerTest {
     }
 
     @ParameterizedTest
+    @CsvSource({
+            "anna, 1, 20, 1, 8, A-1006, A-0136, 1, 0",
+            "anna, 2, 20, 2, 8, A-0135, A-0116, 0, 0",
+            "anna, 8, 15, 8, 8, A-0015, A-0001, 0, 1",
+            "lena, 9, 2, 9, 9, L-0002, L-0001, 0, 1",
+            "anna, 0, 20, 1, 8, A-1006, A-0136, 1, 0",
+            "anna, -1, 20, 1, 8, A-1006, A-0136, 1, 0",
+            "anna, abc, 20, 1, 8, A-1006, A-0136, 1, 0",
+            "anna, 99, 15, 8, 8, A-0015, A-0001, 0, 1"
+    })
+    void paginationRendersRequestedPageAndNavigation(String username, String requested, int rows,
+                                                    int number, int pages, String first, String last,
+                                                    int prevDisabled, int nextDisabled) throws Exception {
+        mvc.perform(get("/transactions").with(user(username)).param("page", requested))
+                .andExpect(status().isOk())
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(rows))
+                .andExpect(xpath("(//*[@data-testid='transaction-row'])[1]/@data-transaction-id").string(first))
+                .andExpect(xpath("(//*[@data-testid='transaction-row'])[last()]/@data-transaction-id").string(last))
+                .andExpect(xpath("//table/following-sibling::*[1][self::nav and @data-testid='pagination'"
+                        + " and @aria-label='Seitennavigation']/form[@method='get' and @action='/transactions']").exists())
+                .andExpect(xpath("//*[@data-testid='pagination-info'][@aria-live='polite']")
+                        .string("Seite " + number + " von " + pages))
+                .andExpect(xpath("//button[@data-testid='pagination-prev'][@type='submit' and @name='page']/@value")
+                        .string(Integer.toString(number - 1)))
+                .andExpect(xpath("//button[@data-testid='pagination-next'][@type='submit' and @name='page']/@value")
+                        .string(Integer.toString(number + 1)))
+                .andExpect(xpath("//*[@data-testid='pagination-prev'][@disabled]").nodeCount(prevDisabled))
+                .andExpect(xpath("//*[@data-testid='pagination-next'][@disabled]").nodeCount(nextDisabled))
+                .andExpect(xpath("//*[@data-testid='filter-error']").doesNotExist());
+    }
+
+    @Test
+    @WithMockUser(username = "marco")
+    void paginationKeepsAllFiltersAndSummaryAndExportsWholeSelection() throws Exception {
+        for (int page = 1; page <= 2; page++) {
+            mvc.perform(get("/transactions").param("category", "Mobilität").param("from", "2025-01-01")
+                            .param("to", "2026-12-31").param("page", Integer.toString(page)))
+                    .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(page == 1 ? 20 : 10))
+                    .andExpect(xpath("(//*[@data-testid='transaction-row'])[1]/@data-transaction-id")
+                            .string(page == 1 ? "M-2004" : "M-0046"))
+                    .andExpect(xpath("//*[@data-testid='pagination-info']").string("Seite " + page + " von 2"))
+                    .andExpect(xpath("//*[@data-testid='pagination-next'][@disabled]").nodeCount(page == 2 ? 1 : 0))
+                    .andExpect(xpath("//*[@data-testid='pagination']//input[@type='hidden' and @name='from']/@value")
+                            .string("2025-01-01"))
+                    .andExpect(xpath("//*[@data-testid='pagination']//input[@type='hidden' and @name='to']/@value")
+                            .string("2026-12-31"))
+                    .andExpect(xpath("//*[@data-testid='pagination']//input[@type='hidden' and @name='category']/@value")
+                            .string("Mobilität"))
+                    .andExpect(xpath("//*[@data-testid='filter-category']/option[@selected]/@value").string("Mobilität"))
+                    .andExpect(xpath("//*[@data-testid='filter-summary']").string(containsString("30 Transaktionen")))
+                    .andExpect(xpath("//*[@data-testid='export-form']//*[@name='page']").doesNotExist());
+        }
+        mvc.perform(get("/transactions").param("category", "Mobilität").param("page", "2"))
+                .andExpect(xpath("(//*[@data-testid='transaction-row'])[last()]/@data-transaction-id").string("M-0003"));
+        String csv = mvc.perform(get("/transactions/export").param("category", "Mobilität").param("page", "2"))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
+        assertEquals(31, csv.split("\r\n").length);
+        assertTrue(csv.startsWith("\uFEFFDatum;Händler;Kategorie;Betrag\r\n11.10.2026;Tankstelle Aare;Mobilität;-92.70\r\n"));
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
+    void filterSubmissionAndResetStartAtFirstPageAndNavigationHasTwentyRowThreshold() throws Exception {
+        mvc.perform(get("/transactions").param("page", "3"))
+                .andExpect(xpath("//*[@data-testid='filter-form']//*[@name='page']").doesNotExist());
+        mvc.perform(get("/transactions").param("category", "Gastronomie"))
+                .andExpect(xpath("//*[@data-testid='pagination-info']").string("Seite 1 von 2"))
+                .andExpect(xpath("(//*[@data-testid='transaction-row'])[1]/@data-transaction-id").string("A-1004"))
+                .andExpect(xpath("//*[@data-testid='filter-reset']/@href").string("/transactions"));
+        mvc.perform(get("/transactions").param("category", "Gastronomie").param("page", "2"))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(1))
+                .andExpect(xpath("//*[@data-testid='transaction-row']/@data-transaction-id").string("A-0003"));
+        mvc.perform(get("/transactions").param("category", "Shopping").param("page", "2"))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(20))
+                .andExpect(xpath("//*[@data-testid='pagination']").doesNotExist());
+        mvc.perform(get("/transactions").param("from", "2026-10-01"))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(6))
+                .andExpect(xpath("//*[@data-testid='pagination']").doesNotExist());
+        mvc.perform(get("/transactions").param("from", "2027-01-01"))
+                .andExpect(xpath("//*[@data-testid='pagination']").doesNotExist());
+        mvc.perform(get("/transactions"))
+                .andExpect(xpath("//*[@data-testid='pagination-info']").string("Seite 1 von 8"));
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
+    void secondPagePreservesMetricsAndInvalidFilterPaginatesFallback() throws Exception {
+        mvc.perform(get("/transactions").param("page", "2"))
+                .andExpect(xpath("//*[@data-testid='balance-total']").string("-1'382.07 CHF"))
+                .andExpect(xpath("//*[@data-testid='count-debits']").string("142 Belastungen"))
+                .andExpect(xpath("//*[@data-testid='count-credits']").string("13 Gutschriften"))
+                .andExpect(xpath("//*[@data-testid='sum-debits']").string("10'386.51 CHF"))
+                .andExpect(xpath("//*[@data-testid='sum-credits']").string("9'004.44 CHF"))
+                .andExpect(xpath("//*[@data-testid='sum-net']").string("1'382.07 CHF"));
+        mvc.perform(get("/transactions").param("page", "2").param("from", "abc"))
+                .andExpect(xpath("//*[@data-testid='filter-error']").exists())
+                .andExpect(xpath("//*[@data-testid='pagination-info']").string("Seite 2 von 8"))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(20))
+                .andExpect(xpath("(//*[@data-testid='transaction-row'])[1]/@data-transaction-id").string("A-0135"));
+    }
+
+    @Test
+    @WithMockUser(username = "anna")
+    void firstPageContainsOneMigrosMatchAndNavigationOutsideSearchedTable() throws Exception {
+        mvc.perform(get("/transactions"))
+                .andExpect(xpath("//*[@data-testid='transaction-row'][contains(translate(td[@data-testid='tx-merchant'],"
+                        + " 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz'), 'migros')]").nodeCount(1))
+                .andExpect(xpath("//*[@data-testid='pagination-info']").string("Seite 1 von 8"))
+                .andExpect(xpath("//table//*[@data-testid='pagination']").doesNotExist());
+    }
+
+    @ParameterizedTest
     @CsvSource({"anna, , , 155", "anna, 2026-10-01, , 6", "marco, , Lebensmittel, 47"})
     void merchantSearchStartsEmptyOutsideFormsOnLoadedRows(String username, String from,
                                                           String category, int rows) throws Exception {
@@ -58,7 +170,7 @@ class PortalControllerTest {
                         .param("from", from == null ? "" : from)
                         .param("category", category == null ? "" : category))
                 .andExpect(status().isOk())
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(rows))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(Math.min(rows, 20)))
                 .andExpect(xpath("//*[@data-testid='transaction-row'][@hidden]").doesNotExist())
                 .andExpect(xpath("//*[@data-testid='transactions-table'][@hidden]").doesNotExist())
                 .andExpect(xpath("//label[@for='merchant-search']").string("Händler suchen"))
@@ -91,7 +203,7 @@ class PortalControllerTest {
     void merchantSearchIsNotPopulatedOrAppliedFromRequestParameters() throws Exception {
         mvc.perform(get("/transactions").param("merchant-search", "migros"))
                 .andExpect(status().isOk())
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(155))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(20))
                 .andExpect(xpath("//*[@data-testid='merchant-search']/@value").doesNotExist())
                 .andExpect(xpath("//*[@data-testid='merchant-search-count'][@hidden]").exists());
     }
@@ -109,7 +221,7 @@ class PortalControllerTest {
         mvc.perform(get("/transactions").with(user(username)).param("category", category)
                         .param("from", from == null ? "" : from).param("to", to == null ? "" : to))
                 .andExpect(status().isOk())
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(count))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(Math.min(count, 20)))
                 .andExpect(xpath("//*[@data-testid='filter-summary']").string(summary.replace('’', '\'')))
                 .andExpect(xpath("//*[@data-testid='filter-category']/option[@selected]/@value").string(category))
                 .andExpect(xpath("//*[@data-testid='filter-from']/@value").string(from == null ? "" : from))
@@ -130,7 +242,7 @@ class PortalControllerTest {
                         .param("from", from == null ? "" : from).param("to", to == null ? "" : to))
                 .andExpect(status().isOk())
                 .andExpect(xpath("//*[@data-testid='filter-error']").string(error))
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(155))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(20))
                 .andExpect(xpath("//*[@data-testid='filter-summary']").doesNotExist());
     }
 
@@ -169,7 +281,7 @@ class PortalControllerTest {
                 .andExpect(xpath(options + "[1]").string("Alle Kategorien"))
                 .andExpect(xpath("//*[@data-testid='filter-category']/@name").string("category"))
                 .andExpect(xpath("//label[@for='filter-category']").string("Kategorie"))
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(146))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(20))
                 .andExpect(xpath("//*[@data-testid='filter-summary']").doesNotExist())
                 .andExpect(xpath("//*[@data-testid='filter-reset']").doesNotExist());
         String[] categories = {"Elektronik", "Gastronomie", "Lebensmittel", "Mobilität",
@@ -240,7 +352,7 @@ class PortalControllerTest {
     void lenaSummaryAndFormattedAmountsMatchDemoData() throws Exception {
         mvc.perform(get("/transactions"))
                 .andExpect(status().isOk())
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(162))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(20))
                 .andExpect(xpath("//*[@data-testid='customer-name']").string("Lena Probst"))
                 .andExpect(xpath("//*[@data-testid='card-number']").string("**** **** **** 7070"))
                 .andExpect(xpath("//*[@data-testid='balance-total']").string("-2'595.70 CHF"))
@@ -263,9 +375,9 @@ class PortalControllerTest {
     void everyCategoryCellContainsExactlyOneBadge() throws Exception {
         mvc.perform(get("/transactions"))
                 .andExpect(status().isOk())
-                .andExpect(xpath("//td[@data-testid='tx-category']").nodeCount(155))
+                .andExpect(xpath("//td[@data-testid='tx-category']").nodeCount(20))
                 .andExpect(xpath("//td[@data-testid='tx-category'][count(*)=1"
-                        + " and count(span[@data-testid='category-badge'])=1]").nodeCount(155));
+                        + " and count(span[@data-testid='category-badge'])=1]").nodeCount(20));
     }
 
     @ParameterizedTest
@@ -370,7 +482,7 @@ class PortalControllerTest {
                         .string(money.format(new java.math.BigDecimal(credits)) + " CHF"))
                 .andExpect(xpath(totals + "/*[@class='value']/*[@data-testid='sum-net']")
                         .string(money.format(new java.math.BigDecimal(net)) + " CHF"))
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(count))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(Math.min(count, 20)))
                 .andExpect(xpath("//*[@data-testid='transaction-counts']/following-sibling::*[1]"
                         + "[@data-testid='period-totals']/following-sibling::*[1]/*[@data-testid='last-login']")
                         .exists());
@@ -401,7 +513,7 @@ class PortalControllerTest {
         mvc.perform(get("/transactions").param("from", "2026-10-10").param("to", "2026-10-01"))
                 .andExpect(status().isOk())
                 .andExpect(xpath("//*[@data-testid='filter-error']").exists())
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(146))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(20))
                 .andExpect(xpath("//*[@data-testid='sum-debits']").string("10'619.48 CHF"))
                 .andExpect(xpath("//*[@data-testid='sum-credits']").string("9'578.80 CHF"))
                 .andExpect(xpath("//*[@data-testid='sum-net']").string("1'040.68 CHF"));
@@ -454,7 +566,7 @@ class PortalControllerTest {
         mvc.perform(get("/transactions").param("from", from == null ? "" : from)
                         .param("to", to == null ? "" : to))
                 .andExpect(status().isOk())
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(count))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(Math.min(count, 20)))
                 .andExpect(xpath("//*[@data-testid='filter-summary']").string(summary))
                 .andExpect(xpath("//*[@data-testid='filter-from']/@value").string(from == null ? "" : from))
                 .andExpect(xpath("//*[@data-testid='filter-to']/@value").string(to == null ? "" : to))
@@ -477,7 +589,7 @@ class PortalControllerTest {
                         .param("to", to == null ? "" : to))
                 .andExpect(status().isOk())
                 .andExpect(xpath("//*[@data-testid='filter-error']").string(error))
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(155))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(20))
                 .andExpect(xpath("//*[@data-testid='filter-summary']").doesNotExist())
                 .andExpect(xpath("//*[@data-testid='filter-no-results']").doesNotExist());
     }
@@ -499,7 +611,7 @@ class PortalControllerTest {
     void resetShowsAllTransactionsWithoutActiveFilter() throws Exception {
         mvc.perform(get("/transactions"))
                 .andExpect(status().isOk())
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(155))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(20))
                 .andExpect(xpath("//*[@data-testid='filter-from']/@value").string(""))
                 .andExpect(xpath("//*[@data-testid='filter-to']/@value").string(""))
                 .andExpect(xpath("//*[@data-testid='filter-summary']").doesNotExist())
@@ -514,7 +626,7 @@ class PortalControllerTest {
                         .param("username", "anna"))
                 .andExpect(status().isOk())
                 .andExpect(xpath("//*[@data-testid='balance-total']").string("-1'040.68 CHF"))
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(count))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(Math.min(count, 20)))
                 .andExpect(xpath("//*[@data-testid='transaction-row'][starts-with(@data-transaction-id, 'A-')]")
                         .doesNotExist());
     }
@@ -564,7 +676,7 @@ class PortalControllerTest {
         mvc.perform(get("/transactions").with(user(username))
                         .param("category", category == null ? "" : category)
                         .param("from", from == null ? "" : from).param("to", to == null ? "" : to))
-                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(count))
+                .andExpect(xpath("//*[@data-testid='transaction-row']").nodeCount(Math.min(count, 20)))
                 .andExpect(xpath("//*[@data-testid='export-csv'][@disabled]").nodeCount(count == 0 ? 1 : 0));
         if ("Mobilität".equals(category)) {
             assertTrue(actual.startsWith(
