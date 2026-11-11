@@ -154,14 +154,14 @@ test.describe('CCP-18 Angezeigte Transaktionen als CSV exportieren', () => {
     await loginAndOpenTransactions(page, 'marco');
     await filter(page, '', '', 'Mobilität');
 
+    // CCP-23: Die Tabelle zeigt Seite 1 (20 Zeilen), die Auswahl umfasst 30 Transaktionen.
     const tableRows = page.getByTestId('transaction-row');
-    await expect(tableRows).toHaveCount(30);
-    const tableCount = await tableRows.count();
+    await expect(tableRows).toHaveCount(20);
+    await expect(page.getByTestId('filter-summary')).toContainText('30 Transaktionen');
 
     const csv = await exportCsv(page);
     const rows = dataLines(csv);
 
-    expect(rows).toHaveLength(tableCount);
     expect(rows).toHaveLength(30);
     expect(rows[0]).toBe('11.10.2026;Tankstelle Aare;Mobilität;-92.70');
   });
@@ -186,7 +186,8 @@ test.describe('CCP-18 Angezeigte Transaktionen als CSV exportieren', () => {
     await page.goto('/transactions?category=Haustiere');
     await expect(page.getByTestId('filter-error')).toHaveText('Unbekannte Kategorie.');
     await expect(page.getByTestId('export-csv')).toBeEnabled();
-    await expect(page.getByTestId('transaction-row')).toHaveCount(ANNA_ANZAHL);
+    // CCP-23: Die ungefilterte Liste ist paginiert, Seite 1 zeigt 20 Zeilen.
+    await expect(page.getByTestId('transaction-row')).toHaveCount(20);
 
     const csv = await exportCsv(page);
 

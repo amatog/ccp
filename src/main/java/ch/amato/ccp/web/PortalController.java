@@ -50,7 +50,8 @@ public class PortalController {
     public String transactions(Authentication authentication, Model model, HttpSession session,
                                @RequestParam(defaultValue = "") String from,
                                @RequestParam(defaultValue = "") String to,
-                               @RequestParam(defaultValue = "") String category) {
+                               @RequestParam(defaultValue = "") String category,
+                               @RequestParam(defaultValue = "1") String page) {
         model.addAttribute("disputedIds", disputeService.disputedIds(session));
         String username = authentication.getName();
         Selection selection = selectTransactions(username, from, to, category);
@@ -71,7 +72,11 @@ public class PortalController {
         model.addAttribute("filterSum", transactionService.balance(transactions));
         model.addAttribute("hasTransactions", !allTransactions.isEmpty());
         model.addAttribute("customer", transactionService.customer(username));
-        model.addAttribute("transactions", transactions);
+        TransactionService.TransactionPage transactionPage = transactionService.page(transactions, page);
+        model.addAttribute("transactions", transactionPage.transactions());
+        model.addAttribute("selectionCount", transactions.size());
+        model.addAttribute("currentPage", transactionPage.number());
+        model.addAttribute("totalPages", transactionPage.totalPages());
         model.addAttribute("sumDebits", transactionService.total(transactions, Transaction.Type.DEBIT));
         model.addAttribute("sumCredits", transactionService.total(transactions, Transaction.Type.CREDIT));
         model.addAttribute("sumNet", transactionService.netSpending(transactions));

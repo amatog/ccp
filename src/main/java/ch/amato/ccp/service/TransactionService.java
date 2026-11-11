@@ -6,6 +6,7 @@ import ch.amato.ccp.repository.DemoDataRepository;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.time.LocalDate;
 import java.util.Comparator;
 import java.util.List;
@@ -51,6 +52,24 @@ public class TransactionService {
                 .filter(tx -> to == null || !tx.date().isAfter(to))
                 .sorted(Comparator.comparing(Transaction::date).reversed())
                 .toList();
+    }
+
+    /** Begrenzt die bereits sortierte Auswahl auf Seiten mit je 20 Transaktionen. */
+    public TransactionPage page(List<Transaction> transactions, String requestedPage) {
+        int totalPages = Math.max(1, (transactions.size() + 19) / 20);
+        int currentPage = 1;
+        try {
+            currentPage = new BigInteger(requestedPage).max(BigInteger.ONE)
+                    .min(BigInteger.valueOf(totalPages)).intValue();
+        } catch (NumberFormatException exception) {
+            // Ungültige Seitenzahlen zeigen ohne Fehlermeldung die erste Seite.
+        }
+        int start = (currentPage - 1) * 20;
+        return new TransactionPage(transactions.subList(start, Math.min(start + 20, transactions.size())),
+                currentPage, totalPages);
+    }
+
+    public record TransactionPage(List<Transaction> transactions, int number, int totalPages) {
     }
 
     /** Anzahl eines Buchungstyps mit deutscher Einzahl- bzw. Mehrzahlbeschriftung. */

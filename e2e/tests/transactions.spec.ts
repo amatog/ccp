@@ -11,11 +11,12 @@ test.describe('Transaktionsübersicht', () => {
   test('listet die Transaktionen des Kunden, neueste zuerst', async ({ page }) => {
     await loginAndOpenTransactions(page, 'anna');
     const rows = page.getByTestId('transaction-row');
-    await expect(rows).toHaveCount(155);
+    // CCP-23: Seite 1 zeigt die neuesten 20 von 155 Transaktionen.
+    await expect(rows).toHaveCount(20);
     await expect(rows.first()).toHaveAttribute('data-transaction-id', 'A-1006');
     await expect(rows.first().getByTestId('tx-merchant')).toHaveText('Swisscom');
-    await expect(rows.last()).toHaveAttribute('data-transaction-id', 'A-0001');
-    await expect(rows.last().getByTestId('tx-date')).toHaveText('22.10.2025');
+    await expect(rows.last()).toHaveAttribute('data-transaction-id', 'A-0136');
+    await expect(rows.last().getByTestId('tx-date')).toHaveText('29.08.2026');
   });
 
   test('Belastungen sind negativ, Gutschriften positiv', async ({ page }) => {
@@ -35,6 +36,7 @@ test.describe('Transaktionsübersicht', () => {
     await loginAndOpenTransactions(page, 'marco');
     await expect(page.getByTestId('customer-name')).toHaveText('Marco Beispiel');
     await expect(page.getByTestId('transactions-table')).not.toContainText('Migros Zürich');
-    await expect(page.getByTestId('transaction-row')).toHaveCount(146);
+    // CCP-23: Seite 1 zeigt 20 von 146 Transaktionen.
+    await expect(page.getByTestId('transaction-row')).toHaveCount(20);
   });
 });

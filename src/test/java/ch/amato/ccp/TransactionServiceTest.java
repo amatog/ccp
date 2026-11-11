@@ -22,6 +22,36 @@ class TransactionServiceTest {
 
     @ParameterizedTest
     @CsvSource({
+            "anna, 1, 20, 1, 8, A-1006, A-0136",
+            "anna, 2, 20, 2, 8, A-0135, A-0116",
+            "anna, 8, 15, 8, 8, A-0015, A-0001",
+            "lena, 9, 2, 9, 9, L-0002, L-0001",
+            "anna, abc, 20, 1, 8, A-1006, A-0136",
+            "anna, 0, 20, 1, 8, A-1006, A-0136",
+            "anna, -2, 20, 1, 8, A-1006, A-0136",
+            "anna, 99, 15, 8, 8, A-0015, A-0001",
+            "anna, 999999999999999999999, 15, 8, 8, A-0015, A-0001"
+    })
+    void pagesPreserveOrderAndClampRequestedNumber(String username, String requested, int count,
+                                                  int number, int totalPages, String first, String last) {
+        var page = service.page(service.transactionsFor(username), requested);
+        assertThat(page.number()).isEqualTo(number);
+        assertThat(page.totalPages()).isEqualTo(totalPages);
+        assertThat(page.transactions()).hasSize(count);
+        assertThat(page.transactions().getFirst().id()).isEqualTo(first);
+        assertThat(page.transactions().getLast().id()).isEqualTo(last);
+    }
+
+    @Test
+    void emptySelectionHasAnEmptyFirstPage() {
+        var page = service.page(List.of(), "99");
+        assertThat(page.transactions()).isEmpty();
+        assertThat(page.number()).isEqualTo(1);
+        assertThat(page.totalPages()).isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
             "anna, 142 Belastungen, 13 Gutschriften",
             "marco, 130 Belastungen, 16 Gutschriften",
             "lena, 146 Belastungen, 16 Gutschriften"
