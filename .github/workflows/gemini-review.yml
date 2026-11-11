@@ -27,7 +27,7 @@ permissions:
 
 jobs:
   review:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     # Secrets werden nur in den Schritten gesetzt, die sie brauchen – nie im Gemini-Schritt ausser dem API-Schlüssel.
     env:
