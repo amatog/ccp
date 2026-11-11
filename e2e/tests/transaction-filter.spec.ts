@@ -21,12 +21,15 @@ async function expectTransactionIds(page: Page, ids: string[]) {
   }
 }
 
-/** Anna hat 155 Transaktionen (20.10.2025 bis heute); die neuesten sind die Oktober-Buchungen. */
-const ANNA_ANZAHL = 155;
+/**
+ * Anna hat 155 Transaktionen (20.10.2025 bis heute); die neuesten sind die Oktober-Buchungen.
+ * Seit CCP-23 (Paginierung) zeigt Seite 1 nur die neuesten 20, die letzte davon ist A-0136.
+ */
+const ANNA_ANZAHL = 20;
 const ANNA_NEUESTE = ['A-1006', 'A-1005', 'A-1004', 'A-1003', 'A-1002', 'A-1001'];
-const ANNA_AELTESTE = 'A-0001';
+const ANNA_AELTESTE = 'A-0136';
 
-/** Prüft, dass alle Transaktionen von Anna ungefiltert angezeigt werden, neueste zuerst. */
+/** Prüft, dass Annas ungefilterte Liste angezeigt wird (Seite 1), neueste zuerst. */
 async function expectAlleAnna(page: Page) {
   const rows = page.getByTestId('transaction-row');
   await expect(rows).toHaveCount(ANNA_ANZAHL);
